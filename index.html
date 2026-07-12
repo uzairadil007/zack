@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mehnat — محنت | Ledger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Mehnat">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#000000;
+    --paper:#ffffff;
+    --stamp:#e9e900;
+    --paper-soft:#f7f7f5;
+    --line:#000000;
+    --danger:#000000;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Cairo', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .num, .mono{font-family:'Cairo', 'Helvetica Neue', Arial, system-ui, sans-serif; font-variant-numeric: tabular-nums;}
+
+  /* ---------- App shell ---------- */
+  .app{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    grid-template-rows:64px 1fr;
+    grid-template-areas:
+      "header header"
+      "nav main";
+    min-height:100vh;
+  }
+  header.top{
+    grid-area:header;
+    background:var(--ink);
+    color:var(--paper);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    border-bottom:4px solid var(--stamp);
+    z-index:20;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    letter-spacing:1.5px;
+    font-size:18px;
+    text-transform:uppercase;
+  }
+  .brand .mark{
+    width:28px;height:28px;background:var(--stamp);border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--ink);font-size:15px;font-weight:800;font-family:'Cairo', sans-serif;
+  }
+  .brand-urdu{
+    direction:rtl;
+    font-family:'Cairo', sans-serif;
+    font-weight:600;
+    color:var(--stamp);
+    font-size:16px;
+    letter-spacing:0;
+    margin-left:2px;
+  }
+  .header-right{display:flex;align-items:center;gap:14px;font-size:12px;color:#ccc;}
+  .header-right .date-chip{
+    background:#151515;border:1px solid #333;padding:6px 10px;border-radius:20px;
+    font-family:'Courier New',monospace; letter-spacing:.5px;
+  }
+
+  nav.side{
+    grid-area:nav;
+    background:var(--ink);
+    color:var(--paper);
+    padding:18px 0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .nav-top{display:flex;flex-direction:column;}
+  .nav-btn{
+    all:unset;
+    cursor:pointer;
+    padding:14px 22px;
+    font-size:13px;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    font-weight:600;
+    color:#bdbdbd;
+    border-left:3px solid transparent;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-height:44px;
+  }
+  .nav-btn:hover{color:var(--paper);}
+  .nav-btn.active{
+    color:var(--paper);
+    background:#101010;
+    border-left:3px solid var(--stamp);
+  }
+  .nav-icon{
+    font-size:15px;
+    width:18px;
+    text-align:center;
+    color:#666;
+    flex-shrink:0;
+  }
+  .nav-btn.active .nav-icon{color:var(--stamp);}
+  .nav-foot{padding:14px 22px;font-size:10px;color:#666;letter-spacing:.5px;line-height:1.6;}
+
+  main.content{
+    grid-area:main;
+    padding:28px 34px 60px;
+    overflow-y:auto;
+    background:var(--paper);
+  }
+  .view{display:none;}
+  .view.active{display:block;animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  h1.view-title{
+    font-size:22px;
+    margin:0 0 4px;
+    letter-spacing:.5px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .view-sub{color:#666;font-size:13px;margin:0 0 24px;}
+
+  /* ---------- Cards / stat blocks ---------- */
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:28px;
+  }
+  .stat-card{
+    border:1.5px solid var(--ink);
+    padding:16px 16px 14px;
+    position:relative;
+    background:var(--paper);
+  }
+  .stat-card::before{
+    content:"";
+    position:absolute;top:0;left:0;right:0;height:4px;background:var(--stamp);
+  }
+  .stat-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#666;font-weight:700;
+  }
+  .stat-value{
+    font-size:26px;font-weight:800;margin-top:6px;font-family:'Cairo', 'Helvetica Neue', Arial, sans-serif;
+  }
+  .stat-note{font-size:11px;color:#999;margin-top:4px;}
+
+  .panel{
+    border:1.5px solid var(--ink);
+    padding:20px;
+    margin-bottom:22px;
+  }
+  .panel-title{
+    font-size:13px;text-transform:uppercase;letter-spacing:.8px;font-weight:800;
+    margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;
+  }
+
+  .two-col{display:grid;grid-template-columns:1.3fr .9fr;gap:20px;}
+
+  /* ---------- Tables ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#666;
+    border-bottom:2px solid var(--ink);
+    padding:8px 10px;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+  thead th:hover{color:var(--ink);}
+  thead th.sorted{color:var(--ink);}
+  thead th.sorted::after{content:" ▾";color:var(--stamp);font-size:9px;}
+  tbody td{
+    padding:9px 10px;
+    border-bottom:1px solid #eee;
+    vertical-align:middle;
+  }
+  tbody tr:hover{background:var(--paper-soft);}
+  .empty-row td{text-align:center;color:#999;padding:30px 10px;font-style:italic;}
+
+  .badge{
+    display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.4px;
+  }
+  .badge.stock-ok{background:#eee;color:#333;}
+  .badge.stock-low{background:var(--ink);color:var(--stamp);}
+  .badge.stock-out{background:var(--stamp);color:var(--ink);border:1.5px solid var(--ink);}
+
+  /* ---------- Buttons / inputs ---------- */
+  .btn{
+    all:unset;cursor:pointer;
+    padding:10px 18px;
+    font-size:12.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    border:1.5px solid var(--ink);
+    text-align:center;
+  }
+  .btn-primary{background:var(--ink);color:var(--stamp);}
+  .btn-primary:hover{background:#1c1c1c;}
+  .btn-accent{background:var(--stamp);color:var(--ink);}
+  .btn-accent:hover{filter:brightness(0.95);}
+  .btn-ghost{background:var(--paper);color:var(--ink);}
+  .btn-ghost:hover{background:var(--paper-soft);}
+  .btn-danger{background:var(--paper);color:var(--ink);border-color:var(--ink);}
+  .btn-danger:hover{background:var(--ink);color:var(--stamp);}
+  .btn-sm{padding:6px 10px;font-size:11px;}
+  .btn[disabled]{opacity:.35;cursor:not-allowed;}
+
+  .row-actions{display:flex;gap:6px;}
+
+  label{
+    display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+    font-weight:700;color:#444;margin-bottom:5px;
+  }
+  input, select, textarea{
+    width:100%;
+    padding:9px 10px;
+    border:1.5px solid var(--ink);
+    background:var(--paper);
+    font-size:13.5px;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--stamp);outline-offset:1px;
+  }
+  .field{margin-bottom:14px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  .toolbar{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+  }
+  .toolbar select, .toolbar input{width:auto;}
+  .search-box{flex:1;min-width:180px;}
+  .chip-group{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{
+    border:1.5px solid var(--ink);padding:5px 12px;font-size:11.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.4px;cursor:pointer;background:var(--paper);
+  }
+  .chip.active{background:var(--ink);color:var(--stamp);}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+    align-items:flex-start;justify-content:center;z-index:100;padding:40px 20px;overflow-y:auto;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal{
+    background:var(--paper);border:2px solid var(--ink);max-width:520px;width:100%;
+    padding:26px;position:relative;
+  }
+  .modal::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--stamp);}
+  .modal h2{margin:6px 0 18px;font-size:18px;letter-spacing:.4px;}
+  .modal-close{
+    position:absolute;top:14px;right:16px;all:unset;cursor:pointer;font-size:18px;font-weight:800;
+  }
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+
+  /* ---------- Receipt / signature element ---------- */
+  .receipt{
+    border:1.5px dashed var(--ink);
+    padding:14px 16px;
+    position:relative;
+    background:var(--paper-soft);
+    font-family:'Courier New',monospace;
+    font-size:12.5px;
+    margin-top:10px;
+  }
+  .receipt .stamp{
+    position:absolute;top:-14px;right:14px;
+    background:var(--stamp);border:1.5px solid var(--ink);
+    color:var(--ink);font-weight:900;font-size:10px;letter-spacing:1px;
+    padding:4px 10px;transform:rotate(4deg);text-transform:uppercase;
+  }
+  .receipt-row{display:flex;justify-content:space-between;padding:2px 0;}
+  .receipt-total{border-top:1.5px dashed var(--ink);margin-top:6px;padding-top:6px;font-weight:800;}
+
+  .table-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--stamp);padding:12px 22px;font-size:13px;font-weight:700;
+    border:1.5px solid var(--stamp);opacity:0;transition:all .25s ease;z-index:200;letter-spacing:.3px;
+    pointer-events:none;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .install-btn{
+    display:none;
+  }
+  .install-btn.show{display:inline-block;}
+
+  .helptext{font-size:11.5px;color:#888;margin-top:4px;}
+
+  .data-actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .data-box{border:1.5px solid var(--ink);padding:18px;}
+  .data-box h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+  .data-box p{font-size:12.5px;color:#666;margin:0 0 14px;line-height:1.5;}
+
+  /* ================= Tablet (≤900px): stack content, keep top nav bar ================= */
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;grid-template-rows:64px auto 1fr;grid-template-areas:"header" "nav" "main";}
+    nav.side{flex-direction:row;overflow-x:auto;padding:0;}
+    .nav-top{flex-direction:row;}
+    .nav-btn{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-btn.active{border-left:none;border-bottom:3px solid var(--stamp);}
+    .nav-foot{display:none;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .two-col{grid-template-columns:1fr;}
+    .field-row, .field-row3{grid-template-columns:1fr;}
+    .data-actions{grid-template-columns:1fr;}
+  }
+
+  /* ================= Phone (≤640px): bottom tab bar, full-width controls, larger touch targets ================= */
+  @media (max-width:640px){
+    html{-webkit-text-size-adjust:100%;}
+
+    .app{
+      grid-template-rows:56px 1fr;
+      grid-template-areas:"header" "main";
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+
+    header.top{
+      padding:0 14px;
+      height:56px;
+    }
+    .brand{font-size:14px;letter-spacing:.8px;gap:6px;}
+    .brand .mark{width:24px;height:24px;font-size:12px;}
+    .brand-urdu{font-size:13px;}
+    .header-right{gap:8px;}
+    .header-right .date-chip{display:none;}
+    .install-btn.show{padding:8px 12px;font-size:11px;}
+
+    main.content{
+      padding:16px 14px 88px;
+    }
+
+    /* bottom tab bar */
+    nav.side{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      grid-area:unset;
+      flex-direction:row;
+      justify-content:space-around;
+      align-items:stretch;
+      padding:0;
+      padding-bottom:env(safe-area-inset-bottom);
+      border-top:2px solid var(--stamp);
+      z-index:50;
+      height:auto;
+    }
+    .nav-top{flex-direction:row;width:100%;justify-content:space-around;}
+    .nav-btn{
+      flex-direction:column;
+      gap:3px;
+      padding:8px 4px 10px;
+      border-left:none;
+      border-bottom:none;
+      border-top:3px solid transparent;
+      flex:1;
+      min-height:52px;
+      justify-content:center;
+      font-size:9.5px;
+      letter-spacing:.2px;
+    }
+    .nav-btn.active{border-left:none;border-top:3px solid var(--stamp);background:#101010;}
+    .nav-icon{font-size:17px;width:auto;}
+    .nav-label{white-space:nowrap;}
+    .nav-foot{display:none;}
+
+    h1.view-title{font-size:19px;}
+    .view-sub{font-size:12px;margin-bottom:18px;}
+
+    .stat-grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .stat-card{padding:12px 12px 10px;}
+    .stat-value{font-size:20px;}
+    .stat-label{font-size:10px;}
+
+    .panel{padding:14px;}
+    .two-col{grid-template-columns:1fr;gap:14px;}
+    .field-row, .field-row3{grid-template-columns:1fr;gap:10px;}
+
+    /* inputs at 16px prevent iOS auto-zoom on focus */
+    input, select, textarea{font-size:16px;padding:11px 10px;}
+    label{font-size:10.5px;}
+    .btn{padding:12px 16px;font-size:13px;min-height:44px;}
+    .btn-sm{padding:9px 12px;min-height:38px;font-size:11px;}
+
+    .toolbar{flex-direction:column;align-items:stretch;gap:8px;}
+    .toolbar select, .toolbar input{width:100%;}
+    #btnAddProduct{margin-left:0 !important;}
+    .chip-group{gap:8px;}
+    .chip{padding:8px 14px;min-height:36px;display:flex;align-items:center;}
+
+    table{font-size:12.5px;}
+    thead th{padding:8px 8px;font-size:10px;}
+    tbody td{padding:9px 8px;}
+    .row-actions{flex-direction:column;gap:4px;}
+    .row-actions .btn{width:100%;}
+
+    /* modal becomes a near-fullscreen sheet */
+    .modal-overlay{padding:0;align-items:flex-end;}
+    .modal{
+      max-width:100%;
+      width:100%;
+      border-left:none;border-right:none;border-bottom:none;
+      max-height:92vh;
+      overflow-y:auto;
+      padding:20px 16px 24px;
+      padding-bottom:calc(24px + env(safe-area-inset-bottom));
+    }
+    .modal-actions{flex-direction:column-reverse;}
+    .modal-actions .btn{width:100%;}
+
+    .data-actions{grid-template-columns:1fr;gap:12px;}
+    .data-box{padding:14px;}
+
+    #toast{
+      bottom:calc(70px + env(safe-area-inset-bottom));
+      left:14px;right:14px;transform:translateY(20px);
+      width:auto;text-align:center;font-size:12.5px;padding:11px 16px;
+    }
+    #toast.show{transform:translateY(0);}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark">م</span> Mehnat <span class="brand-urdu">محنت</span></div>
+    <div class="header-right">
+      <span class="date-chip" id="todayChip"></span>
+      <button class="btn btn-accent btn-sm install-btn" id="installBtn">Install App</button>
+    </div>
+  </header>
+
+  <nav class="side">
+    <div class="nav-top">
+      <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">▦</span><span class="nav-label">Dashboard</span></button>
+      <button class="nav-btn" data-view="inventory"><span class="nav-icon">▢</span><span class="nav-label">Inventory</span></button>
+      <button class="nav-btn" data-view="manufacturers"><span class="nav-icon">⚑</span><span class="nav-label">Manufacturers</span></button>
+      <button class="nav-btn" data-view="sales"><span class="nav-icon">≡</span><span class="nav-label">Sales Ledger</span></button>
+      <button class="nav-btn" data-view="newsale"><span class="nav-icon">+</span><span class="nav-label">Record Sale</span></button>
+      <button class="nav-btn" data-view="data"><span class="nav-icon">⇄</span><span class="nav-label">Data / Transfer</span></button>
+    </div>
+    <div class="nav-foot">Runs fully offline.<br>Data stays on this device.</div>
+  </nav>
+
+  <main class="content">
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <h1 class="view-title">Dashboard</h1>
+      <p class="view-sub">A quick read on how the shop is doing.</p>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Revenue — Today</div>
+          <div class="stat-value num" id="statRevToday">Rs 0</div>
+          <div class="stat-note" id="statUnitsToday">0 units sold</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Profit — Today</div>
+          <div class="stat-value num" id="statProfitToday">Rs 0</div>
+          <div class="stat-note" id="statMarginToday">0% margin</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Revenue — All Time</div>
+          <div class="stat-value num" id="statRevAll">Rs 0</div>
+          <div class="stat-note" id="statSalesAll">0 sales recorded</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Stock Alerts</div>
+          <div class="stat-value num" id="statLowStock">0</div>
+          <div class="stat-note">items low or out of stock</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Best Sellers <span style="font-weight:400;color:#999;font-size:11px;">by units sold</span></div>
+          <div class="table-scroll">
+<table>
+            <thead><tr><th>Product</th><th>Brand</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+            <tbody id="bestSellersBody"></tbody>
+          </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Restock Needed</div>
+          <div class="table-scroll">
+<table>
+            <thead><tr><th>Product</th><th>Stock</th><th>Suggested Qty</th><th>Manufacturer</th><th></th></tr></thead>
+            <tbody id="lowStockBody"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Sales — Last 7 Days</div>
+        <div id="weekChart" style="display:flex;align-items:flex-end;gap:10px;height:140px;padding-top:10px;"></div>
+      </div>
+    </section>
+
+    <!-- INVENTORY -->
+    <section class="view" id="view-inventory">
+      <h1 class="view-title">Inventory</h1>
+      <p class="view-sub">Every cover, sorted the way you actually think about them.</p>
+
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" class="search-box" id="invSearch" placeholder="Search brand, model, color, spec...">
+          <select id="invSortField">
+            <option value="brand">Sort: Brand</option>
+            <option value="model">Sort: Model</option>
+            <option value="color">Sort: Color</option>
+            <option value="specification">Sort: Specification</option>
+            <option value="stock">Sort: Stock (low→high)</option>
+            <option value="sellPrice">Sort: Price</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="invSortDir">↓ Asc</button>
+          <button class="btn btn-primary" id="btnAddProduct" style="margin-left:auto;">+ Add Product</button>
+        </div>
+        <div class="chip-group" id="brandChips" style="margin-bottom:14px;"></div>
+
+        <div class="table-scroll">
+<table>
+          <thead>
+            <tr>
+              <th data-sort="brand">Brand</th>
+              <th data-sort="model">Model</th>
+              <th data-sort="color">Color</th>
+              <th data-sort="specification">Specification</th>
+              <th data-sort="sellPrice">Price</th>
+              <th data-sort="stock">Stock</th>
+              <th>Status</th>
+              <th>Manufacturer</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="inventoryBody"></tbody>
+        </table>
+          </div>
+      </div>
+    </section>
+
+    <!-- MANUFACTURERS -->
+    <section class="view" id="view-manufacturers">
+      <h1 class="view-title">Manufacturers</h1>
+      <p class="view-sub">Contacts for restocking, and a one-tap way to tell them what's run out.</p>
+
+      <div class="panel">
+        <div class="toolbar">
+          <span class="helptext" style="font-size:12.5px;">Assign these to products in Inventory so restock alerts know who to notify.</span>
+          <button class="btn btn-primary" id="btnAddManufacturer" style="margin-left:auto;">+ Add Manufacturer</button>
+        </div>
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>Name</th><th>Contact</th><th>Products</th><th>Pending Restock</th><th></th></tr></thead>
+          <tbody id="manufacturersBody"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Recent Notifications</div>
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>Sent</th><th>Manufacturer</th><th>Items</th><th>Channel</th></tr></thead>
+          <tbody id="notificationsBody"></tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SALES LEDGER -->
+    <section class="view" id="view-sales">
+      <h1 class="view-title">Sales Ledger</h1>
+      <p class="view-sub">Every sale, with running profit calculated for you.</p>
+
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" class="search-box" id="saleSearch" placeholder="Search product, brand, customer...">
+          <input type="date" id="saleDateFilter">
+          <button class="btn btn-ghost btn-sm" id="clearSaleFilter">Clear</button>
+        </div>
+        <div class="table-scroll">
+<table>
+          <thead>
+            <tr><th>Date</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Profit</th><th>Customer</th><th></th></tr>
+          </thead>
+          <tbody id="salesBody"></tbody>
+        </table>
+          </div>
+      </div>
+    </section>
+
+    <!-- RECORD SALE -->
+    <section class="view" id="view-newsale">
+      <h1 class="view-title">Record a Sale</h1>
+      <p class="view-sub">Pick a product, set the quantity, done.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label>Product</label>
+            <select id="saleProduct"></select>
+            <div class="helptext" id="saleStockHint"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Quantity</label>
+              <input type="number" id="saleQty" min="1" value="1">
+            </div>
+            <div class="field">
+              <label>Unit Sell Price (Rs)</label>
+              <input type="number" id="saleUnitPrice" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Customer (optional)</label>
+              <input type="text" id="saleCustomer" placeholder="Walk-in">
+            </div>
+            <div class="field">
+              <label>Date</label>
+              <input type="date" id="saleDate">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnSubmitSale">Record Sale</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Live Receipt</div>
+          <div class="receipt" id="salePreview">
+            <div class="stamp">Preview</div>
+            <div class="receipt-row"><span>Item</span><span id="pvItem">—</span></div>
+            <div class="receipt-row"><span>Qty</span><span id="pvQty">0</span></div>
+            <div class="receipt-row"><span>Unit Price</span><span id="pvUnit">Rs 0</span></div>
+            <div class="receipt-row receipt-total"><span>Total</span><span id="pvTotal">Rs 0</span></div>
+            <div class="receipt-row"><span>Est. Profit</span><span id="pvProfit">Rs 0</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA / TRANSFER -->
+    <section class="view" id="view-data">
+      <h1 class="view-title">Data &amp; Transfer</h1>
+      <p class="view-sub">Move the whole ledger between laptops without losing a single row.</p>
+
+      <div class="data-actions">
+        <div class="data-box">
+          <h3>Export everything</h3>
+          <p>Downloads one file with every product and every sale. Keep this file safe — it's a full backup.</p>
+          <button class="btn btn-primary" id="btnExport">Export All Data (.json)</button>
+        </div>
+        <div class="data-box">
+          <h3>Import from another device</h3>
+          <p>Load a file exported from his ledger. You'll choose whether to merge it with what's here, or replace everything.</p>
+          <input type="file" id="importFile" accept="application/json" style="margin-bottom:10px;">
+          <button class="btn btn-accent" id="btnImport">Import File</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-title">Current Ledger Size</div>
+        <div class="table-scroll">
+<table>
+          <tbody>
+            <tr><td>Products</td><td class="num" id="countProducts">0</td></tr>
+            <tr><td>Sales recorded</td><td class="num" id="countSales">0</td></tr>
+            <tr><td>Manufacturers</td><td class="num" id="countManufacturers">0</td></tr>
+            <tr><td>Notifications sent</td><td class="num" id="countNotifications">0</td></tr>
+            <tr><td>Last export</td><td class="num" id="lastExport">Never</td></tr>
+          </tbody>
+        </table>
+          </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="color:#a00;">Reset</div>
+        <p class="helptext">Wipes all products and sales on this device only. Cannot be undone — export first if unsure.</p>
+        <button class="btn btn-danger" id="btnReset">Erase All Local Data</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <button class="modal-close" id="closeProductModal">✕</button>
+    <h2 id="productModalTitle">Add Product</h2>
+    <input type="hidden" id="productId">
+    <div class="field-row">
+      <div class="field"><label>Brand</label><input type="text" id="pBrand" placeholder="e.g. Samsung"></div>
+      <div class="field"><label>Model</label><input type="text" id="pModel" placeholder="e.g. Galaxy S23"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Color</label><input type="text" id="pColor" placeholder="e.g. Black"></div>
+      <div class="field"><label>Specification</label><input type="text" id="pSpec" placeholder="e.g. Silicone, Shockproof"></div>
+    </div>
+    <div class="field-row3">
+      <div class="field"><label>Cost Price (Rs)</label><input type="number" id="pCost" min="0" step="0.01"></div>
+      <div class="field"><label>Sell Price (Rs)</label><input type="number" id="pPrice" min="0" step="0.01"></div>
+      <div class="field"><label>Stock Qty</label><input type="number" id="pStock" min="0" step="1"></div>
+    </div>
+    <div class="field">
+      <label>Manufacturer / Supplier</label>
+      <select id="pManufacturer"><option value="">— Unassigned —</option></select>
+      <div class="helptext">Who to contact for restock. Add contacts in the Manufacturers tab.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelProduct">Cancel</button>
+      <button class="btn btn-primary" id="saveProduct">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import choice modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <button class="modal-close" id="closeImportModal">✕</button>
+    <h2>How should this file be added?</h2>
+    <p style="font-size:13px;color:#555;line-height:1.6;">
+      <b>Merge (recommended)</b> — keeps everything already here and adds anything new from the file. Nothing is deleted or overwritten.<br><br>
+      <b>Replace all</b> — clears this device and loads the file exactly as-is. Use this when moving a ledger fully from one laptop to another.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="doReplace">Replace All</button>
+      <button class="btn btn-ghost" id="doMerge">Merge</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Manufacturer modal -->
+<div class="modal-overlay" id="manufacturerModal">
+  <div class="modal">
+    <button class="modal-close" id="closeManufacturerModal">✕</button>
+    <h2 id="manufacturerModalTitle">Add Manufacturer</h2>
+    <input type="hidden" id="manufacturerId">
+    <div class="field"><label>Name</label><input type="text" id="mName" placeholder="e.g. ABC Traders"></div>
+    <div class="field-row">
+      <div class="field"><label>Email (optional)</label><input type="email" id="mEmail" placeholder="orders@example.com"></div>
+      <div class="field"><label>WhatsApp / Phone (optional)</label><input type="tel" id="mPhone" placeholder="+92 300 1234567"></div>
+    </div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="mNotes" placeholder="e.g. usual delivery in 3 days"></div>
+    <div class="helptext">Add at least an email or a WhatsApp number so a restock message can actually be sent.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelManufacturer">Cancel</button>
+      <button class="btn btn-primary" id="saveManufacturer">Save Manufacturer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notify manufacturer modal -->
+<div class="modal-overlay" id="notifyModal">
+  <div class="modal">
+    <button class="modal-close" id="closeNotifyModal">✕</button>
+    <h2 id="notifyModalTitle">Notify Manufacturer</h2>
+    <div class="receipt" id="notifyPreviewWrap" style="font-size:12px;white-space:pre-wrap;max-height:280px;overflow-y:auto;">
+      <div class="stamp">Restock</div>
+      <div id="notifyPreviewText"></div>
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="notifyCopy">Copy Message</button>
+      <button class="btn btn-accent" id="notifyWhatsapp">Send via WhatsApp</button>
+      <button class="btn btn-primary" id="notifyEmail">Send via Email</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Storage layer ---------------- */
+  const STORAGE_KEY = "mobileLedgerData_v1";
+  const LOW_STOCK_THRESHOLD = 5;
+
+  function blankData(){
+    return { products: [], sales: [], manufacturers: [], notifications: [], meta: { lastExport: null } };
+  }
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return blankData();
+      const parsed = JSON.parse(raw);
+      parsed.products = parsed.products || [];
+      parsed.sales = parsed.sales || [];
+      parsed.manufacturers = parsed.manufacturers || [];
+      parsed.notifications = parsed.notifications || [];
+      parsed.meta = parsed.meta || { lastExport: null };
+      return parsed;
+    }catch(e){
+      console.error("Failed to load data", e);
+      return blankData();
+    }
+  }
+
+  function saveData(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  }
+
+  let DATA = loadData();
+
+  function uid(prefix){
+    return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
+  }
+
+  function fmtMoney(n){
+    n = Number(n) || 0;
+    return "Rs " + n.toLocaleString("en-PK", {maximumFractionDigits:2});
+  }
+
+  function todayStr(){
+    return new Date().toISOString().slice(0,10);
+  }
+
+  function timeAgo(iso){
+    if(!iso) return null;
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.round(diffMs/60000);
+    if(mins < 1) return "just now";
+    if(mins < 60) return mins + "m ago";
+    const hrs = Math.round(mins/60);
+    if(hrs < 24) return hrs + "h ago";
+    const days = Math.round(hrs/24);
+    return days + "d ago";
+  }
+
+  function toast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._h);
+    toast._h = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  /* ---------------- Restock intelligence ---------------- */
+  // Looks at recent sales velocity for a product and suggests how much to reorder,
+  // rather than just flagging "low stock" with no sense of how fast it actually moves.
+  function salesVelocityPerDay(productId, windowDays){
+    const cutoff = Date.now() - windowDays*24*60*60*1000;
+    const unitsSold = DATA.sales
+      .filter(s=> s.productId === productId && new Date(s.date).getTime() >= cutoff)
+      .reduce((sum,s)=> sum + s.qty, 0);
+    return unitsSold / windowDays;
+  }
+
+  function suggestedReorderQty(product){
+    const velocity = salesVelocityPerDay(product.id, 30);
+    const twoWeekDemand = Math.ceil(velocity * 14);
+    return Math.max(twoWeekDemand, 5); // never suggest less than a sensible minimum restock
+  }
+
+  function isLowStock(product){ return product.stock <= LOW_STOCK_THRESHOLD; }
+
+  function manufacturerById(id){ return DATA.manufacturers.find(m=>m.id===id); }
+
+
+
+  /* ---------------- Navigation ---------------- */
+  const views = document.querySelectorAll(".view");
+  const navBtns = document.querySelectorAll(".nav-btn");
+  navBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      navBtns.forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      views.forEach(v=>v.classList.remove("active"));
+      document.getElementById("view-"+btn.dataset.view).classList.add("active");
+      if(btn.dataset.view === "dashboard") renderDashboard();
+      if(btn.dataset.view === "inventory") renderInventory();
+      if(btn.dataset.view === "manufacturers") renderManufacturers();
+      if(btn.dataset.view === "sales") renderSales();
+      if(btn.dataset.view === "newsale") renderNewSale();
+      if(btn.dataset.view === "data") renderData();
+    });
+  });
+
+  document.getElementById("todayChip").textContent = new Date().toLocaleDateString("en-IN", {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+
+  /* ---------------- Product CRUD ---------------- */
+  const productModal = document.getElementById("productModal");
+  document.getElementById("btnAddProduct").addEventListener("click", ()=>openProductModal());
+  document.getElementById("closeProductModal").addEventListener("click", closeProductModal);
+  document.getElementById("cancelProduct").addEventListener("click", closeProductModal);
+
+  function openProductModal(product){
+    document.getElementById("productModalTitle").textContent = product ? "Edit Product" : "Add Product";
+    document.getElementById("productId").value = product ? product.id : "";
+    document.getElementById("pBrand").value = product ? product.brand : "";
+    document.getElementById("pModel").value = product ? product.model : "";
+    document.getElementById("pColor").value = product ? product.color : "";
+    document.getElementById("pSpec").value = product ? product.specification : "";
+    document.getElementById("pCost").value = product ? product.costPrice : "";
+    document.getElementById("pPrice").value = product ? product.sellPrice : "";
+    document.getElementById("pStock").value = product ? product.stock : "";
+    populateManufacturerSelect(document.getElementById("pManufacturer"), product ? product.manufacturerId : "");
+    productModal.classList.add("active");
+    document.getElementById("pBrand").focus();
+  }
+  function closeProductModal(){ productModal.classList.remove("active"); }
+
+  document.getElementById("saveProduct").addEventListener("click", ()=>{
+    const id = document.getElementById("productId").value;
+    const brand = document.getElementById("pBrand").value.trim();
+    const model = document.getElementById("pModel").value.trim();
+    const color = document.getElementById("pColor").value.trim();
+    const specification = document.getElementById("pSpec").value.trim();
+    const costPrice = parseFloat(document.getElementById("pCost").value) || 0;
+    const sellPrice = parseFloat(document.getElementById("pPrice").value) || 0;
+    const stock = parseInt(document.getElementById("pStock").value) || 0;
+    const manufacturerId = document.getElementById("pManufacturer").value;
+
+    if(!brand || !model){
+      toast("Brand and Model are required");
+      return;
+    }
+
+    if(id){
+      const p = DATA.products.find(x=>x.id===id);
+      Object.assign(p, {brand, model, color, specification, costPrice, sellPrice, stock, manufacturerId});
+      toast("Product updated");
+    }else{
+      DATA.products.push({
+        id: uid("prod"), brand, model, color, specification, costPrice, sellPrice, stock, manufacturerId,
+        createdAt: new Date().toISOString()
+      });
+      toast("Product added");
+    }
+    saveData();
+    closeProductModal();
+    renderInventory();
+    renderDashboard();
+  });
+
+  function deleteProduct(id){
+    if(!confirm("Delete this product? Past sales records will keep their own snapshot data.")) return;
+    DATA.products = DATA.products.filter(p=>p.id!==id);
+    saveData();
+    renderInventory();
+    renderDashboard();
+    toast("Product deleted");
+  }
+
+  /* ---------------- Inventory view ---------------- */
+  let invSort = { field: "brand", dir: 1 };
+  let invSearchTerm = "";
+  let invBrandFilter = null;
+
+  document.getElementById("invSearch").addEventListener("input", (e)=>{
+    invSearchTerm = e.target.value.toLowerCase();
+    renderInventory();
+  });
+  document.getElementById("invSortField").addEventListener("change", (e)=>{
+    invSort.field = e.target.value;
+    renderInventory();
+  });
+  document.getElementById("invSortDir").addEventListener("click", ()=>{
+    invSort.dir *= -1;
+    document.getElementById("invSortDir").textContent = invSort.dir===1 ? "↓ Asc" : "↑ Desc";
+    renderInventory();
+  });
+  document.querySelectorAll("#view-inventory thead th[data-sort]").forEach(th=>{
+    th.addEventListener("click", ()=>{
+      const field = th.dataset.sort;
+      if(invSort.field === field) invSort.dir *= -1; else { invSort.field = field; invSort.dir = 1; }
+      document.getElementById("invSortField").value = field;
+      renderInventory();
+    });
+  });
+
+  function stockBadge(stock){
+    if(stock <= 0) return '<span class="badge stock-out">Out of stock</span>';
+    if(stock <= LOW_STOCK_THRESHOLD) return '<span class="badge stock-low">Low: '+stock+'</span>';
+    return '<span class="badge stock-ok">'+stock+' in stock</span>';
+  }
+
+  function renderInventory(){
+    // brand chips
+    const brands = [...new Set(DATA.products.map(p=>p.brand).filter(Boolean))].sort();
+    const chipsEl = document.getElementById("brandChips");
+    chipsEl.innerHTML = brands.map(b=>
+      `<span class="chip ${invBrandFilter===b?'active':''}" data-brand="${escapeHtml(b)}">${escapeHtml(b)}</span>`
+    ).join("");
+    chipsEl.querySelectorAll(".chip").forEach(c=>{
+      c.addEventListener("click", ()=>{
+        invBrandFilter = invBrandFilter === c.dataset.brand ? null : c.dataset.brand;
+        renderInventory();
+      });
+    });
+
+    let list = DATA.products.slice();
+    if(invBrandFilter) list = list.filter(p=>p.brand===invBrandFilter);
+    if(invSearchTerm){
+      list = list.filter(p=>
+        (p.brand+" "+p.model+" "+p.color+" "+p.specification).toLowerCase().includes(invSearchTerm)
+      );
+    }
+    list.sort((a,b)=>{
+      let av = a[invSort.field], bv = b[invSort.field];
+      if(typeof av === "string"){ av = av.toLowerCase(); bv = (bv||"").toLowerCase(); }
+      if(av < bv) return -1*invSort.dir;
+      if(av > bv) return 1*invSort.dir;
+      return 0;
+    });
+
+    document.querySelectorAll("#view-inventory thead th[data-sort]").forEach(th=>{
+      th.classList.toggle("sorted", th.dataset.sort === invSort.field);
+    });
+
+    const body = document.getElementById("inventoryBody");
+    if(list.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="9">No products match. Try clearing filters, or add your first product.</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(p=>{
+      const mfr = manufacturerById(p.manufacturerId);
+      const notifiedNote = p.lastNotifiedAt ? `<div class="helptext" style="margin-top:2px;">Notified ${timeAgo(p.lastNotifiedAt)}</div>` : "";
+      const canNotify = isLowStock(p) && mfr && (mfr.email || mfr.phone);
+      return `
+      <tr>
+        <td>${escapeHtml(p.brand)}</td>
+        <td>${escapeHtml(p.model)}</td>
+        <td>${escapeHtml(p.color||"—")}</td>
+        <td>${escapeHtml(p.specification||"—")}</td>
+        <td class="num">${fmtMoney(p.sellPrice)}</td>
+        <td class="num">${p.stock}</td>
+        <td>${stockBadge(p.stock)}</td>
+        <td>${mfr ? escapeHtml(mfr.name) : '<span style="color:#aaa;">—</span>'}${notifiedNote}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-ghost btn-sm" data-edit="${p.id}">Edit</button>
+            ${canNotify ? `<button class="btn btn-accent btn-sm" data-notify="${p.id}">Notify</button>` : ""}
+            <button class="btn btn-danger btn-sm" data-del="${p.id}">Del</button>
+          </div>
+        </td>
+      </tr>
+    `;}).join("");
+
+    body.querySelectorAll("[data-edit]").forEach(b=>b.addEventListener("click", ()=>{
+      const p = DATA.products.find(x=>x.id===b.dataset.edit);
+      openProductModal(p);
+    }));
+    body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", ()=>{
+      deleteProduct(b.dataset.del);
+    }));
+    body.querySelectorAll("[data-notify]").forEach(b=>b.addEventListener("click", ()=>{
+      const p = DATA.products.find(x=>x.id===b.dataset.notify);
+      openNotifyModal(p.manufacturerId, [p]);
+    }));
+  }
+
+  function escapeHtml(s){
+    if(s===undefined || s===null) return "";
+    return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  /* ---------------- Manufacturers ---------------- */
+  const manufacturerModal = document.getElementById("manufacturerModal");
+  document.getElementById("btnAddManufacturer").addEventListener("click", ()=>openManufacturerModal());
+  document.getElementById("closeManufacturerModal").addEventListener("click", closeManufacturerModal);
+  document.getElementById("cancelManufacturer").addEventListener("click", closeManufacturerModal);
+
+  function openManufacturerModal(m){
+    document.getElementById("manufacturerModalTitle").textContent = m ? "Edit Manufacturer" : "Add Manufacturer";
+    document.getElementById("manufacturerId").value = m ? m.id : "";
+    document.getElementById("mName").value = m ? m.name : "";
+    document.getElementById("mEmail").value = m ? (m.email||"") : "";
+    document.getElementById("mPhone").value = m ? (m.phone||"") : "";
+    document.getElementById("mNotes").value = m ? (m.notes||"") : "";
+    manufacturerModal.classList.add("active");
+    document.getElementById("mName").focus();
+  }
+  function closeManufacturerModal(){ manufacturerModal.classList.remove("active"); }
+
+  document.getElementById("saveManufacturer").addEventListener("click", ()=>{
+    const id = document.getElementById("manufacturerId").value;
+    const name = document.getElementById("mName").value.trim();
+    const email = document.getElementById("mEmail").value.trim();
+    const phone = document.getElementById("mPhone").value.trim();
+    const notes = document.getElementById("mNotes").value.trim();
+
+    if(!name){ toast("Manufacturer name is required"); return; }
+
+    if(id){
+      Object.assign(manufacturerById(id), {name, email, phone, notes});
+      toast("Manufacturer updated");
+    }else{
+      DATA.manufacturers.push({id: uid("mfr"), name, email, phone, notes, createdAt: new Date().toISOString()});
+      toast("Manufacturer added");
+    }
+    saveData();
+    closeManufacturerModal();
+    renderManufacturers();
+    renderInventory();
+    renderDashboard();
+  });
+
+  function deleteManufacturer(id){
+    const assigned = DATA.products.filter(p=>p.manufacturerId === id).length;
+    const msg = assigned > 0
+      ? `${assigned} product(s) are assigned to this manufacturer. Delete anyway? They'll show as Unassigned.`
+      : "Delete this manufacturer?";
+    if(!confirm(msg)) return;
+    DATA.products.forEach(p=>{ if(p.manufacturerId === id) p.manufacturerId = ""; });
+    DATA.manufacturers = DATA.manufacturers.filter(m=>m.id!==id);
+    saveData();
+    renderManufacturers();
+    renderInventory();
+    renderDashboard();
+    toast("Manufacturer deleted");
+  }
+
+  function populateManufacturerSelect(selectEl, selectedId){
+    selectEl.innerHTML = '<option value="">— Unassigned —</option>' +
+      DATA.manufacturers.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("");
+    selectEl.value = selectedId || "";
+  }
+
+  function renderManufacturers(){
+    const body = document.getElementById("manufacturersBody");
+    if(DATA.manufacturers.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="5">No manufacturers yet. Add one to start sending restock alerts.</td></tr>`;
+    }else{
+      body.innerHTML = DATA.manufacturers.map(m=>{
+        const assigned = DATA.products.filter(p=>p.manufacturerId===m.id);
+        const pending = assigned.filter(p=>isLowStock(p));
+        const contactBits = [m.email, m.phone].filter(Boolean).join(" · ") || "—";
+        const canNotify = pending.length > 0 && (m.email || m.phone);
+        return `
+        <tr>
+          <td>${escapeHtml(m.name)}${m.notes ? `<div class="helptext">${escapeHtml(m.notes)}</div>` : ""}</td>
+          <td class="num">${contactBits}</td>
+          <td class="num">${assigned.length}</td>
+          <td>${pending.length > 0 ? `<span class="badge stock-low">${pending.length} item(s)</span>` : '<span class="badge stock-ok">None</span>'}</td>
+          <td>
+            <div class="row-actions">
+              ${canNotify ? `<button class="btn btn-accent btn-sm" data-notifymfr="${m.id}">Notify</button>` : ""}
+              <button class="btn btn-ghost btn-sm" data-editmfr="${m.id}">Edit</button>
+              <button class="btn btn-danger btn-sm" data-delmfr="${m.id}">Del</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    body.querySelectorAll("[data-editmfr]").forEach(b=>b.addEventListener("click", ()=>{
+      openManufacturerModal(manufacturerById(b.dataset.editmfr));
+    }));
+    body.querySelectorAll("[data-delmfr]").forEach(b=>b.addEventListener("click", ()=>{
+      deleteManufacturer(b.dataset.delmfr);
+    }));
+    body.querySelectorAll("[data-notifymfr]").forEach(b=>b.addEventListener("click", ()=>{
+      const m = manufacturerById(b.dataset.notifymfr);
+      const pending = DATA.products.filter(p=>p.manufacturerId===m.id && isLowStock(p));
+      openNotifyModal(m.id, pending);
+    }));
+
+    // notification history, most recent first
+    const notifBody = document.getElementById("notificationsBody");
+    const history = DATA.notifications.slice().sort((a,b)=>b.sentAt.localeCompare(a.sentAt)).slice(0,20);
+    notifBody.innerHTML = history.length ? history.map(n=>`
+      <tr>
+        <td class="num">${new Date(n.sentAt).toLocaleString("en-PK",{dateStyle:'medium', timeStyle:'short'})}</td>
+        <td>${escapeHtml(n.manufacturerName)}</td>
+        <td>${n.itemCount} item(s)</td>
+        <td>${escapeHtml(n.channel)}</td>
+      </tr>
+    `).join("") : `<tr class="empty-row"><td colspan="4">No restock notifications sent yet</td></tr>`;
+  }
+
+  /* ---------------- Notify manufacturer (compose + send) ---------------- */
+  let notifyContext = null; // { manufacturer, items }
+
+  function composeRestockMessage(manufacturer, items){
+    const lines = [];
+    lines.push(`Assalam-o-Alaikum ${manufacturer.name},`);
+    lines.push("");
+    lines.push("The following items need restocking:");
+    lines.push("");
+    items.forEach(p=>{
+      const stockNote = p.stock <= 0 ? "OUT OF STOCK" : `${p.stock} left`;
+      lines.push(`• ${p.brand} ${p.model} — ${p.color || "—"}, ${p.specification || "—"} — ${stockNote} — suggested qty: ${suggestedReorderQty(p)}`);
+    });
+    lines.push("");
+    lines.push("Please share availability and price at your earliest. Thank you.");
+    lines.push("");
+    lines.push("— Mehnat");
+    return lines.join("\n");
+  }
+
+  function openNotifyModal(manufacturerId, items){
+    const manufacturer = manufacturerById(manufacturerId);
+    if(!manufacturer){ toast("Assign a manufacturer with contact info first"); return; }
+    if(!items || items.length === 0){ toast("Nothing to restock for this manufacturer right now"); return; }
+    if(!manufacturer.email && !manufacturer.phone){ toast("Add an email or WhatsApp number for this manufacturer first"); return; }
+
+    notifyContext = { manufacturer, items };
+    document.getElementById("notifyModalTitle").textContent = "Notify " + manufacturer.name;
+    document.getElementById("notifyPreviewText").textContent = composeRestockMessage(manufacturer, items);
+    document.getElementById("notifyWhatsapp").disabled = !manufacturer.phone;
+    document.getElementById("notifyEmail").disabled = !manufacturer.email;
+    document.getElementById("notifyModal").classList.add("active");
+  }
+
+  function markItemsNotified(items){
+    const now = new Date().toISOString();
+    items.forEach(p=>{ p.lastNotifiedAt = now; });
+  }
+
+  function logNotification(manufacturer, items, channel){
+    DATA.notifications.push({
+      id: uid("notif"),
+      manufacturerId: manufacturer.id,
+      manufacturerName: manufacturer.name,
+      itemCount: items.length,
+      channel,
+      sentAt: new Date().toISOString()
+    });
+  }
+
+  function finishNotify(channel){
+    if(!notifyContext) return;
+    const { manufacturer, items } = notifyContext;
+    markItemsNotified(items);
+    logNotification(manufacturer, items, channel);
+    saveData();
+    document.getElementById("notifyModal").classList.remove("active");
+    renderManufacturers(); renderInventory(); renderDashboard();
+    notifyContext = null;
+  }
+
+  document.getElementById("closeNotifyModal").addEventListener("click", ()=>{
+    document.getElementById("notifyModal").classList.remove("active");
+    notifyContext = null;
+  });
+
+  document.getElementById("notifyCopy").addEventListener("click", async ()=>{
+    if(!notifyContext) return;
+    const text = document.getElementById("notifyPreviewText").textContent;
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("Message copied");
+    }catch(e){
+      toast("Couldn't copy — select and copy manually");
+      return;
+    }
+    finishNotify("Copied");
+  });
+
+  document.getElementById("notifyEmail").addEventListener("click", ()=>{
+    if(!notifyContext || !notifyContext.manufacturer.email) return;
+    const { manufacturer, items } = notifyContext;
+    const subject = encodeURIComponent(`Restock Request — Mehnat — ${todayStr()}`);
+    const body = encodeURIComponent(composeRestockMessage(manufacturer, items));
+    window.location.href = `mailto:${manufacturer.email}?subject=${subject}&body=${body}`;
+    finishNotify("Email");
+  });
+
+  document.getElementById("notifyWhatsapp").addEventListener("click", ()=>{
+    if(!notifyContext || !notifyContext.manufacturer.phone) return;
+    const { manufacturer, items } = notifyContext;
+    const digits = manufacturer.phone.replace(/[^\d]/g, "");
+    const text = encodeURIComponent(composeRestockMessage(manufacturer, items));
+    window.open(`https://wa.me/${digits}?text=${text}`, "_blank");
+    finishNotify("WhatsApp");
+  });
+
+  /* ---------------- New Sale view ---------------- */
+  function renderNewSale(){
+    const sel = document.getElementById("saleProduct");
+    const inStock = DATA.products.filter(p=>p.stock > 0);
+    if(inStock.length === 0){
+      sel.innerHTML = `<option value="">No products in stock — add inventory first</option>`;
+    }else{
+      sel.innerHTML = inStock.map(p=>
+        `<option value="${p.id}">${escapeHtml(p.brand)} ${escapeHtml(p.model)} — ${escapeHtml(p.color)} (${escapeHtml(p.specification)})</option>`
+      ).join("");
+    }
+    document.getElementById("saleDate").value = todayStr();
+    updateSaleForm();
+  }
+
+  document.getElementById("saleProduct").addEventListener("change", updateSaleForm);
+  document.getElementById("saleQty").addEventListener("input", updateSalePreview);
+  document.getElementById("saleUnitPrice").addEventListener("input", updateSalePreview);
+
+  function currentSaleProduct(){
+    const id = document.getElementById("saleProduct").value;
+    return DATA.products.find(p=>p.id===id);
+  }
+
+  function updateSaleForm(){
+    const p = currentSaleProduct();
+    if(p){
+      document.getElementById("saleUnitPrice").value = p.sellPrice;
+      document.getElementById("saleStockHint").textContent = p.stock + " in stock";
+      document.getElementById("saleQty").max = p.stock;
+    }else{
+      document.getElementById("saleStockHint").textContent = "";
+    }
+    updateSalePreview();
+  }
+
+  function updateSalePreview(){
+    const p = currentSaleProduct();
+    const qty = parseInt(document.getElementById("saleQty").value) || 0;
+    const unit = parseFloat(document.getElementById("saleUnitPrice").value) || 0;
+    const total = qty * unit;
+    const cost = p ? p.costPrice * qty : 0;
+    const profit = total - cost;
+
+    document.getElementById("pvItem").textContent = p ? `${p.brand} ${p.model} (${p.color})` : "—";
+    document.getElementById("pvQty").textContent = qty;
+    document.getElementById("pvUnit").textContent = fmtMoney(unit);
+    document.getElementById("pvTotal").textContent = fmtMoney(total);
+    document.getElementById("pvProfit").textContent = fmtMoney(profit);
+  }
+
+  document.getElementById("btnSubmitSale").addEventListener("click", ()=>{
+    const p = currentSaleProduct();
+    if(!p){ toast("Pick a product first"); return; }
+    const qty = parseInt(document.getElementById("saleQty").value) || 0;
+    const unit = parseFloat(document.getElementById("saleUnitPrice").value) || 0;
+    const date = document.getElementById("saleDate").value || todayStr();
+    const customer = document.getElementById("saleCustomer").value.trim();
+
+    if(qty <= 0){ toast("Quantity must be at least 1"); return; }
+    if(qty > p.stock){ toast("Only " + p.stock + " in stock"); return; }
+
+    const total = qty * unit;
+    const cost = p.costPrice * qty;
+    const profit = total - cost;
+
+    DATA.sales.push({
+      id: uid("sale"),
+      productId: p.id,
+      brand: p.brand, model: p.model, color: p.color, specification: p.specification,
+      qty, unitPrice: unit, total, cost, profit, date, customer,
+      createdAt: new Date().toISOString()
+    });
+    p.stock -= qty;
+    saveData();
+
+    toast("Sale recorded — " + fmtMoney(total));
+    document.getElementById("saleQty").value = 1;
+    document.getElementById("saleCustomer").value = "";
+    renderNewSale();
+    renderDashboard();
+  });
+
+  /* ---------------- Sales ledger view ---------------- */
+  let saleSearchTerm = "";
+  let saleDateFilterVal = "";
+
+  document.getElementById("saleSearch").addEventListener("input", e=>{
+    saleSearchTerm = e.target.value.toLowerCase();
+    renderSales();
+  });
+  document.getElementById("saleDateFilter").addEventListener("change", e=>{
+    saleDateFilterVal = e.target.value;
+    renderSales();
+  });
+  document.getElementById("clearSaleFilter").addEventListener("click", ()=>{
+    saleSearchTerm = ""; saleDateFilterVal = "";
+    document.getElementById("saleSearch").value = "";
+    document.getElementById("saleDateFilter").value = "";
+    renderSales();
+  });
+
+  function renderSales(){
+    let list = DATA.sales.slice().sort((a,b)=> new Date(b.date) - new Date(a.date) || b.createdAt.localeCompare(a.createdAt));
+    if(saleDateFilterVal) list = list.filter(s=>s.date === saleDateFilterVal);
+    if(saleSearchTerm){
+      list = list.filter(s=>
+        (s.brand+" "+s.model+" "+s.color+" "+(s.customer||"")).toLowerCase().includes(saleSearchTerm)
+      );
+    }
+    const body = document.getElementById("salesBody");
+    if(list.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="8">No sales recorded yet.</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(s=>`
+      <tr>
+        <td class="num">${s.date}</td>
+        <td>${escapeHtml(s.brand)} ${escapeHtml(s.model)} (${escapeHtml(s.color)})</td>
+        <td class="num">${s.qty}</td>
+        <td class="num">${fmtMoney(s.unitPrice)}</td>
+        <td class="num">${fmtMoney(s.total)}</td>
+        <td class="num">${fmtMoney(s.profit)}</td>
+        <td>${escapeHtml(s.customer)||"—"}</td>
+        <td><button class="btn btn-danger btn-sm" data-delsale="${s.id}">Del</button></td>
+      </tr>
+    `).join("");
+    body.querySelectorAll("[data-delsale]").forEach(b=>b.addEventListener("click", ()=>{
+      if(!confirm("Delete this sale record? Stock will be restored to inventory.")) return;
+      const sale = DATA.sales.find(x=>x.id===b.dataset.delsale);
+      const prod = DATA.products.find(p=>p.id===sale.productId);
+      if(prod) prod.stock += sale.qty;
+      DATA.sales = DATA.sales.filter(x=>x.id!==sale.id);
+      saveData();
+      renderSales();
+      renderDashboard();
+      toast("Sale deleted, stock restored");
+    }));
+  }
+
+  /* ---------------- Dashboard ---------------- */
+  function renderDashboard(){
+    const today = todayStr();
+    const todaySales = DATA.sales.filter(s=>s.date === today);
+    const revToday = todaySales.reduce((a,s)=>a+s.total,0);
+    const profitToday = todaySales.reduce((a,s)=>a+s.profit,0);
+    const unitsToday = todaySales.reduce((a,s)=>a+s.qty,0);
+    const marginToday = revToday>0 ? Math.round((profitToday/revToday)*100) : 0;
+
+    document.getElementById("statRevToday").textContent = fmtMoney(revToday);
+    document.getElementById("statProfitToday").textContent = fmtMoney(profitToday);
+    document.getElementById("statUnitsToday").textContent = unitsToday + " units sold";
+    document.getElementById("statMarginToday").textContent = marginToday + "% margin";
+
+    const revAll = DATA.sales.reduce((a,s)=>a+s.total,0);
+    document.getElementById("statRevAll").textContent = fmtMoney(revAll);
+    document.getElementById("statSalesAll").textContent = DATA.sales.length + " sales recorded";
+
+    const lowStock = DATA.products.filter(p=>isLowStock(p));
+    document.getElementById("statLowStock").textContent = lowStock.length;
+
+    // best sellers
+    const byProduct = {};
+    DATA.sales.forEach(s=>{
+      const key = s.productId;
+      if(!byProduct[key]) byProduct[key] = {brand:s.brand, model:s.model, color:s.color, qty:0, revenue:0};
+      byProduct[key].qty += s.qty;
+      byProduct[key].revenue += s.total;
+    });
+    const best = Object.values(byProduct).sort((a,b)=>b.qty-a.qty).slice(0,5);
+    const bestBody = document.getElementById("bestSellersBody");
+    bestBody.innerHTML = best.length ? best.map(b=>`
+      <tr><td>${escapeHtml(b.model)} (${escapeHtml(b.color)})</td><td>${escapeHtml(b.brand)}</td><td class="num">${b.qty}</td><td class="num">${fmtMoney(b.revenue)}</td></tr>
+    `).join("") : `<tr class="empty-row"><td colspan="4">No sales yet</td></tr>`;
+
+    // restock needed table — stock level, an intelligent reorder suggestion, and a one-tap notify
+    const lowBody = document.getElementById("lowStockBody");
+    const sortedLow = lowStock.slice().sort((a,b)=>a.stock-b.stock).slice(0,8);
+    lowBody.innerHTML = sortedLow.length ? sortedLow.map(p=>{
+      const mfr = manufacturerById(p.manufacturerId);
+      const canNotify = mfr && (mfr.email || mfr.phone);
+      return `
+      <tr>
+        <td>${escapeHtml(p.brand)} ${escapeHtml(p.model)} (${escapeHtml(p.color)})</td>
+        <td>${stockBadge(p.stock)}</td>
+        <td class="num">${suggestedReorderQty(p)}</td>
+        <td>${mfr ? escapeHtml(mfr.name) : '<span style="color:#aaa;">Unassigned</span>'}</td>
+        <td>${canNotify ? `<button class="btn btn-accent btn-sm" data-dashnotify="${p.id}">Notify</button>` : (mfr ? '<span class="helptext">No contact info</span>' : '<span class="helptext">Assign in Inventory</span>')}</td>
+      </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="5">Everything is well stocked</td></tr>`;
+    lowBody.querySelectorAll("[data-dashnotify]").forEach(b=>b.addEventListener("click", ()=>{
+      const p = DATA.products.find(x=>x.id===b.dataset.dashnotify);
+      openNotifyModal(p.manufacturerId, [p]);
+    }));
+
+    // week chart
+    const days = [];
+    for(let i=6;i>=0;i--){
+      const d = new Date();
+      d.setDate(d.getDate()-i);
+      days.push(d.toISOString().slice(0,10));
+    }
+    const dayTotals = days.map(d=> DATA.sales.filter(s=>s.date===d).reduce((a,s)=>a+s.total,0));
+    const max = Math.max(...dayTotals, 1);
+    const chart = document.getElementById("weekChart");
+    chart.innerHTML = days.map((d,i)=>{
+      const h = Math.max(4, Math.round((dayTotals[i]/max)*120));
+      const label = new Date(d).toLocaleDateString("en-IN",{weekday:'short'});
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="num" style="font-size:10px;color:#666;">${dayTotals[i]>0?fmtMoney(dayTotals[i]):''}</div>
+        <div style="width:100%;max-width:34px;height:${h}px;background:var(--stamp);border:1.5px solid var(--ink);"></div>
+        <div style="font-size:10.5px;color:#666;text-transform:uppercase;">${label}</div>
+      </div>`;
+    }).join("");
+  }
+
+  /* ---------------- Data / Export / Import ---------------- */
+  function renderData(){
+    document.getElementById("countProducts").textContent = DATA.products.length;
+    document.getElementById("countSales").textContent = DATA.sales.length;
+    document.getElementById("countManufacturers").textContent = DATA.manufacturers.length;
+    document.getElementById("countNotifications").textContent = DATA.notifications.length;
+    document.getElementById("lastExport").textContent = DATA.meta.lastExport ? new Date(DATA.meta.lastExport).toLocaleString("en-PK") : "Never";
+  }
+
+  document.getElementById("btnExport").addEventListener("click", ()=>{
+    DATA.meta.lastExport = new Date().toISOString();
+    saveData();
+    const exportObj = {
+      app: "mobile-ledger",
+      version: 2,
+      exportedAt: DATA.meta.lastExport,
+      products: DATA.products,
+      sales: DATA.sales,
+      manufacturers: DATA.manufacturers,
+      notifications: DATA.notifications
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mobile-ledger-backup-" + todayStr() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    renderData();
+    toast("Backup downloaded");
+  });
+
+  let pendingImport = null;
+  const importModal = document.getElementById("importModal");
+
+  document.getElementById("btnImport").addEventListener("click", ()=>{
+    const fileInput = document.getElementById("importFile");
+    const file = fileInput.files[0];
+    if(!file){ toast("Choose a file first"); return; }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const parsed = JSON.parse(e.target.result);
+        if(!parsed.products || !parsed.sales){
+          toast("This doesn't look like a valid ledger backup file");
+          return;
+        }
+        parsed.manufacturers = parsed.manufacturers || [];
+        parsed.notifications = parsed.notifications || [];
+        pendingImport = parsed;
+        importModal.classList.add("active");
+      }catch(err){
+        toast("Couldn't read that file — is it a valid .json backup?");
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById("closeImportModal").addEventListener("click", ()=>{
+    importModal.classList.remove("active");
+    pendingImport = null;
+  });
+
+  document.getElementById("doMerge").addEventListener("click", ()=>{
+    if(!pendingImport) return;
+    const existingProductIds = new Set(DATA.products.map(p=>p.id));
+    const existingSaleIds = new Set(DATA.sales.map(s=>s.id));
+    const existingMfrIds = new Set(DATA.manufacturers.map(m=>m.id));
+    const existingNotifIds = new Set(DATA.notifications.map(n=>n.id));
+    let addedProducts = 0, addedSales = 0, skippedDupProducts = 0, addedMfrs = 0, addedNotifs = 0;
+
+    // dedupe products also by brand+model+color+spec combo to avoid visual duplicates
+    const comboKey = p => [p.brand,p.model,p.color,p.specification].map(x=>(x||"").toLowerCase().trim()).join("|");
+    const existingCombos = new Set(DATA.products.map(comboKey));
+
+    // dedupe manufacturers by name+email combo so the same supplier isn't listed twice
+    const mfrComboKey = m => [m.name,m.email].map(x=>(x||"").toLowerCase().trim()).join("|");
+    const existingMfrCombos = new Set(DATA.manufacturers.map(mfrComboKey));
+
+    pendingImport.manufacturers.forEach(m=>{
+      if(existingMfrIds.has(m.id)) return;
+      if(existingMfrCombos.has(mfrComboKey(m))) return;
+      DATA.manufacturers.push(m);
+      existingMfrIds.add(m.id);
+      existingMfrCombos.add(mfrComboKey(m));
+      addedMfrs++;
+    });
+
+    pendingImport.products.forEach(p=>{
+      if(existingProductIds.has(p.id)) { skippedDupProducts++; return; }
+      if(existingCombos.has(comboKey(p))){ skippedDupProducts++; return; }
+      DATA.products.push(p);
+      existingProductIds.add(p.id);
+      existingCombos.add(comboKey(p));
+      addedProducts++;
+    });
+
+    pendingImport.sales.forEach(s=>{
+      if(existingSaleIds.has(s.id)) return;
+      DATA.sales.push(s);
+      existingSaleIds.add(s.id);
+      addedSales++;
+    });
+
+    pendingImport.notifications.forEach(n=>{
+      if(existingNotifIds.has(n.id)) return;
+      DATA.notifications.push(n);
+      existingNotifIds.add(n.id);
+      addedNotifs++;
+    });
+
+    saveData();
+    importModal.classList.remove("active");
+    pendingImport = null;
+    document.getElementById("importFile").value = "";
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
+    toast(`Merged: +${addedProducts} products, +${addedSales} sales, +${addedMfrs} manufacturers (${skippedDupProducts} products already existed)`);
+  });
+
+  document.getElementById("doReplace").addEventListener("click", ()=>{
+    if(!pendingImport) return;
+    if(!confirm("This replaces every product, sale, and manufacturer currently on this device with the imported file. Continue?")) return;
+    DATA.products = pendingImport.products;
+    DATA.sales = pendingImport.sales;
+    DATA.manufacturers = pendingImport.manufacturers;
+    DATA.notifications = pendingImport.notifications;
+    saveData();
+    importModal.classList.remove("active");
+    pendingImport = null;
+    document.getElementById("importFile").value = "";
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
+    toast("Ledger replaced with imported file");
+  });
+
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    if(!confirm("This erases ALL products, sales, and manufacturers on this device. This cannot be undone. Continue?")) return;
+    if(!confirm("Really sure? Consider exporting a backup first.")) return;
+    DATA = blankData();
+    saveData();
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
+    toast("All local data erased");
+  });
+
+  /* ---------------- PWA install + service worker ---------------- */
+  let deferredPrompt;
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("installBtn").classList.add("show");
+  });
+  document.getElementById("installBtn").addEventListener("click", async ()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById("installBtn").classList.remove("show");
+  });
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("sw.js").catch(()=>{ /* fine if offline/file:// */ });
+    });
+  }
+
+  /* ---------------- Init ---------------- */
+  renderDashboard();
+  renderInventory();
+  renderManufacturers();
+  renderSales();
+  renderNewSale();
+  renderData();
+
+})();
+</script>
+</body>
+</html>
