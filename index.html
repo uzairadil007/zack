@@ -346,16 +346,26 @@
     .two-col{grid-template-columns:1fr;}
     .field-row, .field-row3{grid-template-columns:1fr;}
     .data-actions{grid-template-columns:1fr;}
+    .header-right .date-chip{display:none;}
+    .header-right .install-btn.show{padding:6px 10px;font-size:10.5px;}
   }
 
-  /* ================= Phone (≤640px): bottom tab bar, full-width controls, larger touch targets ================= */
+  /* ================= Phone (≤640px): fixed app shell, bottom tab bar as a locked footer row ================= */
   @media (max-width:640px){
     html{-webkit-text-size-adjust:100%;}
 
+    /* Lock the whole app to the viewport and let ONLY main.content scroll.
+       This keeps the bottom tab bar structurally pinned as a real footer row
+       instead of relying on position:fixed, which mobile browsers/WebViews
+       can misplace when the address bar shows/hides or the body scrolls. */
+    html, body{height:100%;overflow:hidden;}
     .app{
-      grid-template-rows:56px 1fr;
-      grid-template-areas:"header" "main";
-      padding-bottom:env(safe-area-inset-bottom);
+      height:100vh;
+      height:100dvh;
+      grid-template-rows:56px 1fr auto;
+      grid-template-areas:"header" "main" "nav";
+      overflow:hidden;
+      min-height:0;
     }
 
     header.top{
@@ -367,17 +377,19 @@
     .brand-urdu{font-size:13px;}
     .header-right{gap:8px;}
     .header-right .date-chip{display:none;}
-    .install-btn.show{padding:8px 12px;font-size:11px;}
+    .header-right .install-btn.show{padding:6px 10px;font-size:10.5px;}
 
     main.content{
-      padding:16px 14px 88px;
+      padding:16px 14px 20px;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      min-height:0;
     }
 
-    /* bottom tab bar */
+    /* bottom tab bar — a normal locked grid row, not position:fixed */
     nav.side{
-      position:fixed;
-      left:0;right:0;bottom:0;
-      grid-area:unset;
+      grid-area:nav;
+      position:static;
       flex-direction:row;
       justify-content:space-around;
       align-items:stretch;
@@ -386,6 +398,7 @@
       border-top:2px solid var(--stamp);
       z-index:50;
       height:auto;
+      flex-shrink:0;
     }
     .nav-top{flex-direction:row;width:100%;justify-content:space-around;}
     .nav-btn{
@@ -422,7 +435,7 @@
     input, select, textarea{font-size:16px;padding:11px 10px;}
     label{font-size:10.5px;}
     .btn{padding:12px 16px;font-size:13px;min-height:44px;}
-    .btn-sm{padding:9px 12px;min-height:38px;font-size:11px;}
+    .btn-sm{padding:6px 10px;min-height:34px;font-size:11px;}
 
     .toolbar{flex-direction:column;align-items:stretch;gap:8px;}
     .toolbar select, .toolbar input{width:100%;}
@@ -454,7 +467,7 @@
     .data-box{padding:14px;}
 
     #toast{
-      bottom:calc(70px + env(safe-area-inset-bottom));
+      bottom:calc(66px + env(safe-area-inset-bottom));
       left:14px;right:14px;transform:translateY(20px);
       width:auto;text-align:center;font-size:12.5px;padding:11px 16px;
     }
