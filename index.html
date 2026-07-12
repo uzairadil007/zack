@@ -329,6 +329,75 @@
 
   .helptext{font-size:11.5px;color:#888;margin-top:4px;}
 
+  .color-field{display:flex;align-items:center;gap:8px;}
+  .color-field select{flex:1;}
+  .color-swatch{
+    width:34px;height:34px;flex:0 0 34px;
+    border:1.5px solid var(--ink);border-radius:50%;
+    background:#fff;
+  }
+  .color-swatch.multicolor{
+    background:conic-gradient(#e11d48,#f59e0b,#22c55e,#3b82f6,#a855f7,#e11d48);
+  }
+  .swatch-dot{
+    display:inline-block;width:11px;height:11px;border-radius:50%;
+    border:1.3px solid var(--ink);margin-right:6px;vertical-align:-1.5px;
+    background:#fff;flex-shrink:0;
+  }
+  .swatch-dot.multicolor{
+    background:conic-gradient(#e11d48,#f59e0b,#22c55e,#3b82f6,#a855f7,#e11d48);
+  }
+  .stock-stepper{display:flex;align-items:center;gap:6px;}
+  .stock-stepper button{
+    all:unset;cursor:pointer;
+    width:22px;height:22px;
+    border:1.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:13px;line-height:1;
+    flex-shrink:0;
+  }
+  .stock-stepper button:hover{background:var(--stamp);}
+  .stock-stepper button:active{background:var(--ink);color:var(--stamp);}
+  .stock-stepper span{min-width:20px;text-align:center;}
+
+  .combobox{position:relative;}
+  .combobox input{
+    padding-right:36px;
+    cursor:text;
+  }
+  .combobox-chevron{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    pointer-events:none;font-size:13px;color:#666;
+  }
+  .combobox.open .combobox-chevron{color:var(--ink);}
+  .combobox-panel{
+    display:none;
+    position:absolute;
+    left:0;right:0;top:calc(100% + 4px);
+    background:var(--paper);
+    border:1.5px solid var(--ink);
+    max-height:280px;
+    overflow-y:auto;
+    z-index:60;
+    box-shadow:0 6px 0 rgba(0,0,0,0.08);
+  }
+  .combobox.open .combobox-panel{display:block;}
+  .combobox-item{
+    padding:11px 12px;
+    cursor:pointer;
+    border-bottom:1px solid #eee;
+    font-size:13.5px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .combobox-item:last-child{border-bottom:none;}
+  .combobox-item:hover, .combobox-item.highlighted{background:var(--stamp);}
+  .combobox-item .stock-note{font-size:11px;color:#888;flex-shrink:0;font-family:'Cairo',sans-serif;}
+  .combobox-item:hover .stock-note, .combobox-item.highlighted .stock-note{color:var(--ink);}
+  .combobox-empty{padding:14px 12px;color:#999;font-size:13px;font-style:italic;}
+
   .data-actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .data-box{border:1.5px solid var(--ink);padding:18px;}
   .data-box h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
@@ -354,16 +423,17 @@
   @media (max-width:640px){
     html{-webkit-text-size-adjust:100%;}
 
-    /* Lock the whole app to the viewport and let ONLY main.content scroll.
-       This keeps the bottom tab bar structurally pinned as a real footer row
-       instead of relying on position:fixed, which mobile browsers/WebViews
-       can misplace when the address bar shows/hides or the body scrolls. */
+    /* Lock the whole app to the viewport as a flex column and let ONLY
+       main.content scroll. Flexbox with an explicit visual order is far
+       more predictable across mobile browsers/WebViews than relying on
+       CSS Grid track sizing or position:fixed, both of which can let the
+       footer drift when content height changes (e.g. a toast appearing). */
     html, body{height:100%;overflow:hidden;}
     .app{
+      display:flex;
+      flex-direction:column;
       height:100vh;
       height:100dvh;
-      grid-template-rows:56px 1fr auto;
-      grid-template-areas:"header" "main" "nav";
       overflow:hidden;
       min-height:0;
     }
@@ -371,6 +441,8 @@
     header.top{
       padding:0 14px;
       height:56px;
+      flex:0 0 56px;
+      order:1;
     }
     .brand{font-size:14px;letter-spacing:.8px;gap:6px;}
     .brand .mark{width:24px;height:24px;font-size:12px;}
@@ -380,15 +452,19 @@
     .header-right .install-btn.show{padding:6px 10px;font-size:10.5px;}
 
     main.content{
+      order:2;
+      flex:1 1 auto;
+      min-height:0;
       padding:16px 14px 20px;
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
-      min-height:0;
     }
 
-    /* bottom tab bar — a normal locked grid row, not position:fixed */
+    /* bottom tab bar — a normal flex-locked footer, always last, never affected
+       by how tall the scrollable content above it gets */
     nav.side{
-      grid-area:nav;
+      order:3;
+      flex:0 0 auto;
       position:static;
       flex-direction:row;
       justify-content:space-around;
@@ -432,7 +508,8 @@
     .field-row, .field-row3{grid-template-columns:1fr;gap:10px;}
 
     /* inputs at 16px prevent iOS auto-zoom on focus */
-    input, select, textarea{font-size:16px;padding:11px 10px;}
+    input, select, textarea{font-size:16px;padding:11px 10px;max-width:100%;min-width:0;box-sizing:border-box;}
+    input[type="date"]{-webkit-appearance:none;appearance:none;}
     label{font-size:10.5px;}
     .btn{padding:12px 16px;font-size:13px;min-height:44px;}
     .btn-sm{padding:6px 10px;min-height:34px;font-size:11px;}
@@ -444,6 +521,7 @@
     .chip{padding:8px 14px;min-height:36px;display:flex;align-items:center;}
 
     table{font-size:12.5px;}
+    .stock-stepper button{width:28px;height:28px;font-size:15px;}
     thead th{padding:8px 8px;font-size:10px;}
     tbody td{padding:9px 8px;}
     .row-actions{flex-direction:column;gap:4px;}
@@ -574,6 +652,10 @@
           <button class="btn btn-ghost btn-sm" id="invSortDir">↓ Asc</button>
           <button class="btn btn-primary" id="btnAddProduct" style="margin-left:auto;">+ Add Product</button>
         </div>
+        <div class="toolbar" style="margin-top:-4px;">
+          <select id="invColorFilter"><option value="">All Colors</option></select>
+          <select id="invSpecFilter"><option value="">All Specifications</option></select>
+        </div>
         <div class="chip-group" id="brandChips" style="margin-bottom:14px;"></div>
 
         <div class="table-scroll">
@@ -657,7 +739,11 @@
         <div class="panel">
           <div class="field">
             <label>Product</label>
-            <select id="saleProduct"></select>
+            <div class="combobox" id="saleProductCombobox">
+              <input type="text" id="saleProductInput" placeholder="Search brand, model, color, spec..." autocomplete="off">
+              <span class="combobox-chevron">⌄</span>
+              <div class="combobox-panel" id="saleProductPanel"></div>
+            </div>
             <div class="helptext" id="saleStockHint"></div>
           </div>
           <div class="field-row">
@@ -752,7 +838,14 @@
       <div class="field"><label>Model</label><input type="text" id="pModel" placeholder="e.g. Galaxy S23"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Color</label><input type="text" id="pColor" placeholder="e.g. Black"></div>
+      <div class="field">
+        <label>Color</label>
+        <div class="color-field">
+          <span class="color-swatch" id="pColorSwatch"></span>
+          <select id="pColorSelect"></select>
+        </div>
+        <input type="text" id="pColorCustom" placeholder="Type custom color name" style="display:none;margin-top:8px;">
+      </div>
       <div class="field"><label>Specification</label><input type="text" id="pSpec" placeholder="e.g. Silicone, Shockproof"></div>
     </div>
     <div class="field-row3">
@@ -916,6 +1009,42 @@
 
   function manufacturerById(id){ return DATA.manufacturers.find(m=>m.id===id); }
 
+  /* ---------------- Colors ---------------- */
+  // A fixed, sensible palette for mobile covers/accessories keeps filtering and
+  // sorting meaningful (no "Black" vs "black" vs "blk" splitting the same stock),
+  // while "Custom" still lets an unusual color through.
+  const COLOR_OPTIONS = [
+    "Black","White","Silver","Space Grey","Gold","Rose Gold",
+    "Blue","Navy Blue","Red","Green","Yellow","Orange",
+    "Purple","Pink","Grey","Brown","Transparent / Clear","Multicolor"
+  ];
+  const COLOR_HEX = {
+    "Black":"#000000","White":"#ffffff","Silver":"#c9c9c9","Space Grey":"#5f5f5f",
+    "Gold":"#d4af37","Rose Gold":"#b76e79","Blue":"#2563eb","Navy Blue":"#1e293b",
+    "Red":"#dc2626","Green":"#16a34a","Yellow":"#e9e900","Orange":"#f97316",
+    "Purple":"#7c3aed","Pink":"#ec4899","Grey":"#9ca3af","Brown":"#78350f",
+    "Transparent / Clear":"#f1f5f9"
+  };
+
+  function applySwatch(el, colorName){
+    el.classList.remove("multicolor");
+    if(colorName === "Multicolor"){
+      el.classList.add("multicolor");
+      el.style.background = "";
+    }else if(COLOR_HEX[colorName]){
+      el.style.background = COLOR_HEX[colorName];
+    }else{
+      el.style.background = "#f1f1f1"; // unknown/custom color — neutral placeholder
+    }
+  }
+
+  function swatchDotHtml(colorName){
+    if(!colorName) return "";
+    if(colorName === "Multicolor") return '<span class="swatch-dot multicolor"></span>';
+    const hex = COLOR_HEX[colorName] || "#f1f1f1";
+    return `<span class="swatch-dot" style="background:${hex};"></span>`;
+  }
+
 
 
   /* ---------------- Navigation ---------------- */
@@ -944,12 +1073,59 @@
   document.getElementById("closeProductModal").addEventListener("click", closeProductModal);
   document.getElementById("cancelProduct").addEventListener("click", closeProductModal);
 
+  function populateColorSelect(){
+    const sel = document.getElementById("pColorSelect");
+    sel.innerHTML = '<option value="">Select color…</option>' +
+      COLOR_OPTIONS.map(c=>`<option value="${c}">${c}</option>`).join("") +
+      '<option value="__custom__">Custom / Other…</option>';
+  }
+
+  function setColorFieldValue(colorName){
+    const sel = document.getElementById("pColorSelect");
+    const customInput = document.getElementById("pColorCustom");
+    const swatch = document.getElementById("pColorSwatch");
+    if(colorName && COLOR_OPTIONS.includes(colorName)){
+      sel.value = colorName;
+      customInput.style.display = "none";
+      customInput.value = "";
+    }else if(colorName){
+      sel.value = "__custom__";
+      customInput.style.display = "block";
+      customInput.value = colorName;
+    }else{
+      sel.value = "";
+      customInput.style.display = "none";
+      customInput.value = "";
+    }
+    applySwatch(swatch, sel.value === "__custom__" ? "" : sel.value);
+  }
+
+  document.getElementById("pColorSelect").addEventListener("change", (e)=>{
+    const customInput = document.getElementById("pColorCustom");
+    const swatch = document.getElementById("pColorSwatch");
+    if(e.target.value === "__custom__"){
+      customInput.style.display = "block";
+      customInput.focus();
+      applySwatch(swatch, "");
+    }else{
+      customInput.style.display = "none";
+      customInput.value = "";
+      applySwatch(swatch, e.target.value);
+    }
+  });
+
+  function currentColorFieldValue(){
+    const sel = document.getElementById("pColorSelect");
+    if(sel.value === "__custom__") return document.getElementById("pColorCustom").value.trim();
+    return sel.value;
+  }
+
   function openProductModal(product){
     document.getElementById("productModalTitle").textContent = product ? "Edit Product" : "Add Product";
     document.getElementById("productId").value = product ? product.id : "";
     document.getElementById("pBrand").value = product ? product.brand : "";
     document.getElementById("pModel").value = product ? product.model : "";
-    document.getElementById("pColor").value = product ? product.color : "";
+    setColorFieldValue(product ? product.color : "");
     document.getElementById("pSpec").value = product ? product.specification : "";
     document.getElementById("pCost").value = product ? product.costPrice : "";
     document.getElementById("pPrice").value = product ? product.sellPrice : "";
@@ -964,7 +1140,7 @@
     const id = document.getElementById("productId").value;
     const brand = document.getElementById("pBrand").value.trim();
     const model = document.getElementById("pModel").value.trim();
-    const color = document.getElementById("pColor").value.trim();
+    const color = currentColorFieldValue();
     const specification = document.getElementById("pSpec").value.trim();
     const costPrice = parseFloat(document.getElementById("pCost").value) || 0;
     const sellPrice = parseFloat(document.getElementById("pPrice").value) || 0;
@@ -1006,6 +1182,8 @@
   let invSort = { field: "brand", dir: 1 };
   let invSearchTerm = "";
   let invBrandFilter = null;
+  let invColorFilter = "";
+  let invSpecFilter = "";
 
   document.getElementById("invSearch").addEventListener("input", (e)=>{
     invSearchTerm = e.target.value.toLowerCase();
@@ -1018,6 +1196,14 @@
   document.getElementById("invSortDir").addEventListener("click", ()=>{
     invSort.dir *= -1;
     document.getElementById("invSortDir").textContent = invSort.dir===1 ? "↓ Asc" : "↑ Desc";
+    renderInventory();
+  });
+  document.getElementById("invColorFilter").addEventListener("change", (e)=>{
+    invColorFilter = e.target.value;
+    renderInventory();
+  });
+  document.getElementById("invSpecFilter").addEventListener("change", (e)=>{
+    invSpecFilter = e.target.value;
     renderInventory();
   });
   document.querySelectorAll("#view-inventory thead th[data-sort]").forEach(th=>{
@@ -1035,6 +1221,15 @@
     return '<span class="badge stock-ok">'+stock+' in stock</span>';
   }
 
+  function adjustStock(productId, delta){
+    const p = DATA.products.find(x=>x.id===productId);
+    if(!p) return;
+    p.stock = Math.max(0, p.stock + delta);
+    saveData();
+    renderInventory();
+    renderDashboard();
+  }
+
   function renderInventory(){
     // brand chips
     const brands = [...new Set(DATA.products.map(p=>p.brand).filter(Boolean))].sort();
@@ -1049,8 +1244,23 @@
       });
     });
 
+    // color & specification filter dropdowns, rebuilt from whatever's actually in stock
+    const colorSel = document.getElementById("invColorFilter");
+    const colors = [...new Set(DATA.products.map(p=>p.color).filter(Boolean))].sort();
+    colorSel.innerHTML = '<option value="">All Colors</option>' + colors.map(c=>
+      `<option value="${escapeHtml(c)}" ${invColorFilter===c?'selected':''}>${escapeHtml(c)}</option>`
+    ).join("");
+
+    const specSel = document.getElementById("invSpecFilter");
+    const specs = [...new Set(DATA.products.map(p=>p.specification).filter(Boolean))].sort();
+    specSel.innerHTML = '<option value="">All Specifications</option>' + specs.map(s=>
+      `<option value="${escapeHtml(s)}" ${invSpecFilter===s?'selected':''}>${escapeHtml(s)}</option>`
+    ).join("");
+
     let list = DATA.products.slice();
     if(invBrandFilter) list = list.filter(p=>p.brand===invBrandFilter);
+    if(invColorFilter) list = list.filter(p=>p.color===invColorFilter);
+    if(invSpecFilter) list = list.filter(p=>p.specification===invSpecFilter);
     if(invSearchTerm){
       list = list.filter(p=>
         (p.brand+" "+p.model+" "+p.color+" "+p.specification).toLowerCase().includes(invSearchTerm)
@@ -1081,10 +1291,16 @@
       <tr>
         <td>${escapeHtml(p.brand)}</td>
         <td>${escapeHtml(p.model)}</td>
-        <td>${escapeHtml(p.color||"—")}</td>
+        <td>${swatchDotHtml(p.color)}${escapeHtml(p.color||"—")}</td>
         <td>${escapeHtml(p.specification||"—")}</td>
         <td class="num">${fmtMoney(p.sellPrice)}</td>
-        <td class="num">${p.stock}</td>
+        <td class="num">
+          <div class="stock-stepper">
+            <button data-stepdown="${p.id}" aria-label="Decrease stock">−</button>
+            <span>${p.stock}</span>
+            <button data-stepup="${p.id}" aria-label="Increase stock">+</button>
+          </div>
+        </td>
         <td>${stockBadge(p.stock)}</td>
         <td>${mfr ? escapeHtml(mfr.name) : '<span style="color:#aaa;">—</span>'}${notifiedNote}</td>
         <td>
@@ -1107,6 +1323,12 @@
     body.querySelectorAll("[data-notify]").forEach(b=>b.addEventListener("click", ()=>{
       const p = DATA.products.find(x=>x.id===b.dataset.notify);
       openNotifyModal(p.manufacturerId, [p]);
+    }));
+    body.querySelectorAll("[data-stepup]").forEach(b=>b.addEventListener("click", ()=>{
+      adjustStock(b.dataset.stepup, 1);
+    }));
+    body.querySelectorAll("[data-stepdown]").forEach(b=>b.addEventListener("click", ()=>{
+      adjustStock(b.dataset.stepdown, -1);
     }));
   }
 
@@ -1326,28 +1548,116 @@
     finishNotify("WhatsApp");
   });
 
-  /* ---------------- New Sale view ---------------- */
+  /* ---------------- New Sale view: searchable product combobox ---------------- */
+  let selectedSaleProductId = "";
+  let saleComboHighlight = -1;
+
   function renderNewSale(){
-    const sel = document.getElementById("saleProduct");
-    const inStock = DATA.products.filter(p=>p.stock > 0);
-    if(inStock.length === 0){
-      sel.innerHTML = `<option value="">No products in stock — add inventory first</option>`;
-    }else{
-      sel.innerHTML = inStock.map(p=>
-        `<option value="${p.id}">${escapeHtml(p.brand)} ${escapeHtml(p.model)} — ${escapeHtml(p.color)} (${escapeHtml(p.specification)})</option>`
-      ).join("");
-    }
+    selectedSaleProductId = "";
+    document.getElementById("saleProductInput").value = "";
+    document.getElementById("saleStockHint").textContent = "";
     document.getElementById("saleDate").value = todayStr();
+    closeSaleCombobox();
     updateSaleForm();
   }
 
-  document.getElementById("saleProduct").addEventListener("change", updateSaleForm);
+  function saleProductLabel(p){
+    return `${p.brand} ${p.model} — ${p.color} (${p.specification})`;
+  }
+
+  function saleComboMatches(term){
+    const t = (term || "").toLowerCase();
+    let inStock = DATA.products.filter(p=>p.stock > 0);
+    if(t){
+      inStock = inStock.filter(p=>
+        (p.brand+" "+p.model+" "+p.color+" "+p.specification).toLowerCase().includes(t)
+      );
+    }
+    return inStock;
+  }
+
+  function openSaleCombobox(){
+    document.getElementById("saleProductCombobox").classList.add("open");
+  }
+  function closeSaleCombobox(){
+    document.getElementById("saleProductCombobox").classList.remove("open");
+    saleComboHighlight = -1;
+  }
+
+  function renderSaleComboPanel(term){
+    const panel = document.getElementById("saleProductPanel");
+    const matches = saleComboMatches(term);
+    if(matches.length === 0){
+      panel.innerHTML = `<div class="combobox-empty">${DATA.products.length === 0 ? "No products yet — add inventory first" : "No matches — try a different search"}</div>`;
+      saleComboHighlight = -1;
+      return;
+    }
+    panel.innerHTML = matches.map((p,i)=>`
+      <div class="combobox-item${i===saleComboHighlight?' highlighted':''}" data-id="${p.id}">
+        <span>${escapeHtml(saleProductLabel(p))}</span>
+        <span class="stock-note">${p.stock} in stock</span>
+      </div>
+    `).join("");
+    panel.querySelectorAll(".combobox-item").forEach(el=>{
+      el.addEventListener("mousedown", (e)=>{
+        e.preventDefault(); // keep focus behavior predictable, fire before input blur
+        selectSaleProduct(el.dataset.id);
+      });
+    });
+  }
+
+  function selectSaleProduct(id){
+    const p = DATA.products.find(x=>x.id===id);
+    if(!p) return;
+    selectedSaleProductId = id;
+    document.getElementById("saleProductInput").value = saleProductLabel(p);
+    closeSaleCombobox();
+    updateSaleForm();
+  }
+
+  const saleProductInput = document.getElementById("saleProductInput");
+  saleProductInput.addEventListener("focus", ()=>{
+    openSaleCombobox();
+    renderSaleComboPanel("");
+  });
+  saleProductInput.addEventListener("input", ()=>{
+    selectedSaleProductId = ""; // typing invalidates the previous exact selection until they pick again
+    openSaleCombobox();
+    renderSaleComboPanel(saleProductInput.value);
+  });
+  saleProductInput.addEventListener("keydown", (e)=>{
+    const panel = document.getElementById("saleProductPanel");
+    const items = panel.querySelectorAll(".combobox-item");
+    if(e.key === "ArrowDown"){
+      e.preventDefault();
+      if(items.length === 0) return;
+      saleComboHighlight = Math.min(saleComboHighlight + 1, items.length - 1);
+      renderSaleComboPanel(saleProductInput.value);
+    }else if(e.key === "ArrowUp"){
+      e.preventDefault();
+      if(items.length === 0) return;
+      saleComboHighlight = Math.max(saleComboHighlight - 1, 0);
+      renderSaleComboPanel(saleProductInput.value);
+    }else if(e.key === "Enter"){
+      e.preventDefault();
+      const target = saleComboHighlight >= 0 ? items[saleComboHighlight] : items[0];
+      if(target) selectSaleProduct(target.dataset.id);
+    }else if(e.key === "Escape"){
+      closeSaleCombobox();
+      saleProductInput.blur();
+    }
+  });
+  document.addEventListener("click", (e)=>{
+    if(!document.getElementById("saleProductCombobox").contains(e.target)){
+      closeSaleCombobox();
+    }
+  });
+
   document.getElementById("saleQty").addEventListener("input", updateSalePreview);
   document.getElementById("saleUnitPrice").addEventListener("input", updateSalePreview);
 
   function currentSaleProduct(){
-    const id = document.getElementById("saleProduct").value;
-    return DATA.products.find(p=>p.id===id);
+    return DATA.products.find(p=>p.id===selectedSaleProductId);
   }
 
   function updateSaleForm(){
@@ -1709,6 +2019,7 @@
   }
 
   /* ---------------- Init ---------------- */
+  populateColorSelect();
   renderDashboard();
   renderInventory();
   renderManufacturers();

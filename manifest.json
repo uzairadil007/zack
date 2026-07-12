@@ -1,7 +1,7 @@
 {
-  "name": "Mobile Accessories Ledger",
-  "short_name": "Ledger",
-  "description": "Inventory and sales ledger for a mobile accessories store",
+  "name": "Mehnat — محنت | Ledger",
+  "short_name": "Mehnat",
+  "description": "Mehnat — the inventory and sales ledger for a mobile accessories store",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
