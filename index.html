@@ -398,6 +398,43 @@
   .combobox-item:hover .stock-note, .combobox-item.highlighted .stock-note{color:var(--ink);}
   .combobox-empty{padding:14px 12px;color:#999;font-size:13px;font-style:italic;}
 
+  .cart-list{margin-top:12px;}
+  .cart-empty{color:#999;font-size:12.5px;font-style:italic;padding:10px 0;}
+  .cart-row{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 0;border-bottom:1px solid #eee;
+  }
+  .cart-row:last-child{border-bottom:none;}
+  .cart-row .cart-label{flex:1;font-size:13px;}
+  .cart-row .cart-sub{font-size:11px;color:#888;}
+  .cart-row .stock-stepper button{width:24px;height:24px;}
+
+  .scanner-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    background:#000;
+    overflow:hidden;
+    border:1.5px solid var(--ink);
+  }
+  .scanner-frame video{width:100%;height:100%;object-fit:cover;display:block;}
+  .scanner-reticle{
+    position:absolute;inset:15%;
+    border:2.5px solid var(--stamp);
+    border-radius:8px;
+    pointer-events:none;
+    box-shadow:0 0 0 999px rgba(0,0,0,0.35);
+  }
+
+  .reconcile-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 0;border-bottom:1px solid #eee;
+  }
+  .reconcile-item:last-child{border-bottom:none;}
+  .reconcile-item .ri-label{font-size:13px;flex:1;}
+  .reconcile-item .ri-counts{font-size:11.5px;color:#666;font-family:'Cairo',sans-serif;}
+  .reconcile-item .ri-sold{color:var(--ink);font-weight:700;}
+
   .data-actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .data-box{border:1.5px solid var(--ink);padding:18px;}
   .data-box h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
@@ -551,7 +588,22 @@
     }
     #toast.show{transform:translateY(0);}
   }
+  @media print{
+    body *{visibility:hidden;}
+    .printable, .printable *{visibility:visible;}
+    #codeModal.printable{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;}
+    #codeModal .modal-close, #codeModal .modal-actions{display:none;}
+    #printAllSheet.printable{position:fixed;inset:0;background:#fff;padding:24px;overflow:visible;display:block;}
+  }
+  #printAllSheet{display:none;}
+  .print-sheet-title{font-size:16px;font-weight:800;margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px;}
+  .print-sheet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .print-sheet-item{border:1px dashed #999;padding:10px;text-align:center;break-inside:avoid;}
+  .print-sheet-item svg{width:100%;height:auto;max-width:130px;}
+  .print-sheet-item .psi-label{font-size:10.5px;margin-top:6px;font-family:'Cairo',sans-serif;line-height:1.4;}
 </style>
+<script src="vendor/qrcode.min.js"></script>
+<script src="vendor/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -569,6 +621,7 @@
       <button class="nav-btn active" data-view="dashboard"><span class="nav-icon">▦</span><span class="nav-label">Dashboard</span></button>
       <button class="nav-btn" data-view="inventory"><span class="nav-icon">▢</span><span class="nav-label">Inventory</span></button>
       <button class="nav-btn" data-view="manufacturers"><span class="nav-icon">⚑</span><span class="nav-label">Manufacturers</span></button>
+      <button class="nav-btn" data-view="lending"><span class="nav-icon">⇌</span><span class="nav-label">Lending</span></button>
       <button class="nav-btn" data-view="sales"><span class="nav-icon">≡</span><span class="nav-label">Sales Ledger</span></button>
       <button class="nav-btn" data-view="newsale"><span class="nav-icon">+</span><span class="nav-label">Record Sale</span></button>
       <button class="nav-btn" data-view="data"><span class="nav-icon">⇄</span><span class="nav-label">Data / Transfer</span></button>
@@ -650,6 +703,7 @@
             <option value="sellPrice">Sort: Price</option>
           </select>
           <button class="btn btn-ghost btn-sm" id="invSortDir">↓ Asc</button>
+          <button class="btn btn-ghost" id="btnPrintAllCodes">Print All Codes</button>
           <button class="btn btn-primary" id="btnAddProduct" style="margin-left:auto;">+ Add Product</button>
         </div>
         <div class="toolbar" style="margin-top:-4px;">
@@ -704,6 +758,58 @@
           <thead><tr><th>Sent</th><th>Manufacturer</th><th>Items</th><th>Channel</th></tr></thead>
           <tbody id="notificationsBody"></tbody>
         </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- LENDING -->
+    <section class="view" id="view-lending">
+      <h1 class="view-title">Lending</h1>
+      <p class="view-sub">Hand covers to a shopkeeper on consignment, then reconcile what comes back.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">Lend Out
+            <button class="btn btn-ghost btn-sm" id="btnAddSeller">+ Add Shopkeeper</button>
+          </div>
+          <div class="field">
+            <label>Shopkeeper</label>
+            <select id="lendSeller"><option value="">— Select —</option></select>
+          </div>
+          <div class="field">
+            <label>Add Items</label>
+            <div class="combobox" id="lendProductCombobox">
+              <input type="text" id="lendProductInput" placeholder="Search brand, model, color, spec..." autocomplete="off">
+              <span class="combobox-chevron">⌄</span>
+              <div class="combobox-panel" id="lendProductPanel"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="btn btn-accent" id="btnScanLend" style="flex:1;">Scan Code</button>
+            </div>
+            <div class="helptext" id="scannerAvailabilityNote"></div>
+          </div>
+          <div id="lendCart" class="cart-list"></div>
+          <button class="btn btn-primary" id="btnConfirmLend" style="margin-top:10px;width:100%;">Confirm Lend Out</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Currently Out</div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Shopkeeper</th><th>Lent</th><th>Items</th><th></th></tr></thead>
+              <tbody id="activeLendingsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Lending History</div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Shopkeeper</th><th>Lent</th><th>Closed</th><th>Sold</th><th>Returned</th><th>Cash Received</th></tr></thead>
+            <tbody id="lendingHistoryBody"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -788,6 +894,11 @@
       <h1 class="view-title">Data &amp; Transfer</h1>
       <p class="view-sub">Move the whole ledger between laptops without losing a single row.</p>
 
+      <div class="panel" id="installPanel">
+        <div class="panel-title">App Install</div>
+        <div id="installPanelBody"></div>
+      </div>
+
       <div class="data-actions">
         <div class="data-box">
           <h3>Export everything</h3>
@@ -811,6 +922,8 @@
             <tr><td>Sales recorded</td><td class="num" id="countSales">0</td></tr>
             <tr><td>Manufacturers</td><td class="num" id="countManufacturers">0</td></tr>
             <tr><td>Notifications sent</td><td class="num" id="countNotifications">0</td></tr>
+            <tr><td>Shopkeepers</td><td class="num" id="countSellers">0</td></tr>
+            <tr><td>Lending records</td><td class="num" id="countLendings">0</td></tr>
             <tr><td>Last export</td><td class="num" id="lastExport">Never</td></tr>
           </tbody>
         </table>
@@ -918,6 +1031,88 @@
   </div>
 </div>
 
+<!-- Add/Edit Seller (shopkeeper) modal -->
+<div class="modal-overlay" id="sellerModal">
+  <div class="modal">
+    <button class="modal-close" id="closeSellerModal">✕</button>
+    <h2 id="sellerModalTitle">Add Shopkeeper</h2>
+    <input type="hidden" id="sellerId">
+    <div class="field"><label>Name / Shop</label><input type="text" id="sellerName" placeholder="e.g. Bilal Mobile Shop"></div>
+    <div class="field"><label>Phone (optional)</label><input type="tel" id="sellerPhone" placeholder="+92 300 1234567"></div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="sellerNotes" placeholder="e.g. usually near Anarkali"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelSeller">Cancel</button>
+      <button class="btn btn-primary" id="saveSeller">Save Shopkeeper</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera scanner modal (used for both lending and reconciling returns) -->
+<div class="modal-overlay" id="scannerModal">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" id="closeScannerModal">✕</button>
+    <h2 id="scannerModalTitle">Scan a Code</h2>
+    <div class="scanner-frame">
+      <video id="scannerVideo" playsinline muted></video>
+      <div class="scanner-reticle"></div>
+    </div>
+    <canvas id="scannerCanvas" style="display:none;"></canvas>
+    <p class="helptext" id="scannerStatus" style="text-align:center;margin-top:10px;">Point the camera at a product code.</p>
+    <p class="helptext" id="scannerLastScan" style="text-align:center;font-weight:700;color:var(--ink);min-height:16px;"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="scannerDone" style="width:100%;">Done Scanning</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reconcile a lending batch -->
+<div class="modal-overlay" id="reconcileModal">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" id="closeReconcileModal">✕</button>
+    <h2 id="reconcileModalTitle">Reconcile Return</h2>
+    <p class="helptext" style="margin-bottom:12px;">Scan or tap up what the shopkeeper is physically handing back. Anything left over is treated as sold.</p>
+    <button class="btn btn-accent" id="btnScanReturn" style="width:100%;margin-bottom:14px;">Scan Returned Item</button>
+    <div id="reconcileItems"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelReconcile">Cancel</button>
+      <button class="btn btn-primary" id="btnFinishReconcile">Finish Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cash received prompt (only shown when some items weren't returned) -->
+<div class="modal-overlay" id="cashModal">
+  <div class="modal">
+    <button class="modal-close" id="closeCashModal">✕</button>
+    <h2>Cash Received</h2>
+    <p class="helptext" id="cashModalSummary" style="margin-bottom:14px;"></p>
+    <div class="field">
+      <label>Total cash received from this shopkeeper (Rs)</label>
+      <input type="number" id="cashReceivedInput" min="0" step="1" placeholder="0">
+    </div>
+    <p class="helptext">This gets split across the sold items in proportion to their listed price, and recorded in your Sales Ledger.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelCash">Cancel</button>
+      <button class="btn btn-primary" id="confirmCash">Confirm &amp; Close Batch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product QR code modal -->
+<div class="modal-overlay printable" id="codeModal">
+  <div class="modal" style="max-width:360px;text-align:center;">
+    <button class="modal-close" id="closeCodeModal">✕</button>
+    <h2 id="codeModalTitle">Product Code</h2>
+    <div id="codeModalCanvas" style="display:flex;justify-content:center;margin:10px 0;"></div>
+    <p class="helptext" id="codeModalLabel"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="printCode" style="width:100%;">Print</button>
+    </div>
+  </div>
+</div>
+
+<div id="printAllSheet" class="printable"></div>
+
 <div id="toast"></div>
 
 <script>
@@ -929,7 +1124,7 @@
   const LOW_STOCK_THRESHOLD = 5;
 
   function blankData(){
-    return { products: [], sales: [], manufacturers: [], notifications: [], meta: { lastExport: null } };
+    return { products: [], sales: [], manufacturers: [], notifications: [], sellers: [], lendings: [], meta: { lastExport: null } };
   }
 
   function loadData(){
@@ -941,6 +1136,8 @@
       parsed.sales = parsed.sales || [];
       parsed.manufacturers = parsed.manufacturers || [];
       parsed.notifications = parsed.notifications || [];
+      parsed.sellers = parsed.sellers || [];
+      parsed.lendings = parsed.lendings || [];
       parsed.meta = parsed.meta || { lastExport: null };
       return parsed;
     }catch(e){
@@ -1059,6 +1256,7 @@
       if(btn.dataset.view === "dashboard") renderDashboard();
       if(btn.dataset.view === "inventory") renderInventory();
       if(btn.dataset.view === "manufacturers") renderManufacturers();
+      if(btn.dataset.view === "lending") renderLending();
       if(btn.dataset.view === "sales") renderSales();
       if(btn.dataset.view === "newsale") renderNewSale();
       if(btn.dataset.view === "data") renderData();
@@ -1306,6 +1504,7 @@
         <td>
           <div class="row-actions">
             <button class="btn btn-ghost btn-sm" data-edit="${p.id}">Edit</button>
+            <button class="btn btn-ghost btn-sm" data-code="${p.id}">Code</button>
             ${canNotify ? `<button class="btn btn-accent btn-sm" data-notify="${p.id}">Notify</button>` : ""}
             <button class="btn btn-danger btn-sm" data-del="${p.id}">Del</button>
           </div>
@@ -1319,6 +1518,10 @@
     }));
     body.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click", ()=>{
       deleteProduct(b.dataset.del);
+    }));
+    body.querySelectorAll("[data-code]").forEach(b=>b.addEventListener("click", ()=>{
+      const p = DATA.products.find(x=>x.id===b.dataset.code);
+      openCodeModal(p);
     }));
     body.querySelectorAll("[data-notify]").forEach(b=>b.addEventListener("click", ()=>{
       const p = DATA.products.find(x=>x.id===b.dataset.notify);
@@ -1547,6 +1750,555 @@
     window.open(`https://wa.me/${digits}?text=${text}`, "_blank");
     finishNotify("WhatsApp");
   });
+
+  /* ================= Product QR codes ================= */
+  const QR_PREFIX = "MEHNAT:PROD:";
+
+  function productQrPayload(productId){ return QR_PREFIX + productId; }
+
+  function parseProductQr(text){
+    if(typeof text !== "string" || !text.startsWith(QR_PREFIX)) return null;
+    return text.slice(QR_PREFIX.length);
+  }
+
+  function renderQrInto(containerEl, payload, cellSize){
+    const qr = qrcode(0, "M");
+    qr.addData(payload);
+    qr.make();
+    containerEl.innerHTML = qr.createSvgTag(cellSize || 5, 4);
+  }
+
+  document.getElementById("closeCodeModal").addEventListener("click", ()=>{
+    document.getElementById("codeModal").classList.remove("active");
+  });
+
+  function openCodeModal(product){
+    document.getElementById("codeModalTitle").textContent = `${product.brand} ${product.model}`;
+    document.getElementById("codeModalLabel").textContent = `${product.color || "—"} · ${product.specification || "—"}`;
+    renderQrInto(document.getElementById("codeModalCanvas"), productQrPayload(product.id), 6);
+    document.getElementById("codeModal").classList.add("active");
+  }
+
+  document.getElementById("printCode").addEventListener("click", ()=>{ window.print(); });
+
+  document.getElementById("btnPrintAllCodes").addEventListener("click", ()=>{
+    if(DATA.products.length === 0){ toast("Add some products first"); return; }
+    const sheet = document.getElementById("printAllSheet");
+    const itemsHtml = DATA.products.map(p=>{
+      const qr = qrcode(0, "M");
+      qr.addData(productQrPayload(p.id));
+      qr.make();
+      return `
+        <div class="print-sheet-item">
+          ${qr.createSvgTag(4, 2)}
+          <div class="psi-label">${escapeHtml(p.brand)} ${escapeHtml(p.model)}<br>${escapeHtml(p.color||"—")} · ${escapeHtml(p.specification||"—")}</div>
+        </div>`;
+    }).join("");
+    sheet.innerHTML = `<div class="print-sheet-title">Mehnat — Product Codes</div><div class="print-sheet-grid">${itemsHtml}</div>`;
+    window.print();
+  });
+
+  /* ================= Camera scanner (shared by Lend Out + Reconcile) ================= */
+  let scannerStream = null;
+  let scannerRAF = null;
+  let scannerOnDetect = null;
+  let scannerLastPayload = "";
+  let scannerLastTime = 0;
+
+  function cameraAvailable(){
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+
+  function openScanner(title, onDetect){
+    if(!cameraAvailable()){
+      toast("No camera available on this device/browser — use search instead");
+      return;
+    }
+    scannerOnDetect = onDetect;
+    scannerLastPayload = "";
+    scannerLastTime = 0;
+    document.getElementById("scannerModalTitle").textContent = title;
+    document.getElementById("scannerStatus").textContent = "Point the camera at a product code.";
+    document.getElementById("scannerLastScan").textContent = "";
+    document.getElementById("scannerModal").classList.add("active");
+    startScannerCamera();
+  }
+
+  async function startScannerCamera(){
+    const video = document.getElementById("scannerVideo");
+    try{
+      scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      video.srcObject = scannerStream;
+      await video.play();
+      scannerRAF = requestAnimationFrame(scanFrame);
+    }catch(e){
+      document.getElementById("scannerStatus").textContent = "Camera permission denied or unavailable — close this and use search instead.";
+    }
+  }
+
+  function scanFrame(){
+    const video = document.getElementById("scannerVideo");
+    const canvas = document.getElementById("scannerCanvas");
+    if(!document.getElementById("scannerModal").classList.contains("active")) return;
+
+    if(video.readyState === video.HAVE_ENOUGH_DATA){
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+      if(code && code.data){
+        const now = Date.now();
+        const sameAsLast = code.data === scannerLastPayload && (now - scannerLastTime) < 1200;
+        if(!sameAsLast){
+          scannerLastPayload = code.data;
+          scannerLastTime = now;
+          handleScanResult(code.data);
+        }
+      }
+    }
+    scannerRAF = requestAnimationFrame(scanFrame);
+  }
+
+  function handleScanResult(payload){
+    const productId = parseProductQr(payload);
+    const product = productId ? DATA.products.find(p=>p.id === productId) : null;
+    if(!product){
+      document.getElementById("scannerLastScan").textContent = "Not a recognized product code";
+      return;
+    }
+    if(scannerOnDetect) scannerOnDetect(product);
+  }
+
+  function closeScanner(){
+    document.getElementById("scannerModal").classList.remove("active");
+    if(scannerRAF) cancelAnimationFrame(scannerRAF);
+    scannerRAF = null;
+    if(scannerStream){
+      scannerStream.getTracks().forEach(t=>t.stop());
+      scannerStream = null;
+    }
+    scannerOnDetect = null;
+  }
+
+  document.getElementById("closeScannerModal").addEventListener("click", closeScanner);
+  document.getElementById("scannerDone").addEventListener("click", closeScanner);
+
+  /* ================= Sellers (shopkeepers) ================= */
+  function sellerById(id){ return DATA.sellers.find(s=>s.id===id); }
+
+  const sellerModal = document.getElementById("sellerModal");
+  document.getElementById("btnAddSeller").addEventListener("click", ()=>openSellerModal());
+  document.getElementById("closeSellerModal").addEventListener("click", closeSellerModal);
+  document.getElementById("cancelSeller").addEventListener("click", closeSellerModal);
+
+  function openSellerModal(s){
+    document.getElementById("sellerModalTitle").textContent = s ? "Edit Shopkeeper" : "Add Shopkeeper";
+    document.getElementById("sellerId").value = s ? s.id : "";
+    document.getElementById("sellerName").value = s ? s.name : "";
+    document.getElementById("sellerPhone").value = s ? (s.phone||"") : "";
+    document.getElementById("sellerNotes").value = s ? (s.notes||"") : "";
+    sellerModal.classList.add("active");
+    document.getElementById("sellerName").focus();
+  }
+  function closeSellerModal(){ sellerModal.classList.remove("active"); }
+
+  document.getElementById("saveSeller").addEventListener("click", ()=>{
+    const id = document.getElementById("sellerId").value;
+    const name = document.getElementById("sellerName").value.trim();
+    const phone = document.getElementById("sellerPhone").value.trim();
+    const notes = document.getElementById("sellerNotes").value.trim();
+    if(!name){ toast("Shopkeeper name is required"); return; }
+
+    let newId = id;
+    if(id){
+      Object.assign(sellerById(id), {name, phone, notes});
+    }else{
+      newId = uid("seller");
+      DATA.sellers.push({id: newId, name, phone, notes, createdAt: new Date().toISOString()});
+    }
+    saveData();
+    closeSellerModal();
+    populateSellerSelect(newId);
+    toast(id ? "Shopkeeper updated" : "Shopkeeper added");
+  });
+
+  function populateSellerSelect(selectedId){
+    const sel = document.getElementById("lendSeller");
+    const prev = selectedId || sel.value;
+    sel.innerHTML = '<option value="">— Select —</option>' +
+      DATA.sellers.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+    sel.value = prev || "";
+  }
+
+  /* ================= Lend Out: cart + searchable product combobox ================= */
+  let lendCart = {}; // productId -> qty staged to lend
+  let lendComboHighlight = -1;
+
+  function lendCartAvailable(product){
+    // stock already accounts for nothing being reserved elsewhere; cap by what's not already in the cart
+    const staged = lendCart[product.id] || 0;
+    return product.stock - staged;
+  }
+
+  function addToLendCart(productId, qty){
+    const p = DATA.products.find(x=>x.id===productId);
+    if(!p) return;
+    if(lendCartAvailable(p) < qty){
+      toast(`Only ${p.stock - (lendCart[productId]||0)} more available for ${p.brand} ${p.model}`);
+      return;
+    }
+    lendCart[productId] = (lendCart[productId] || 0) + qty;
+    renderLendCart();
+  }
+
+  function renderLendCart(){
+    const el = document.getElementById("lendCart");
+    const entries = Object.entries(lendCart).filter(([,qty])=>qty > 0);
+    if(entries.length === 0){
+      el.innerHTML = `<div class="cart-empty">No items added yet — search or scan to add covers.</div>`;
+      return;
+    }
+    el.innerHTML = entries.map(([productId, qty])=>{
+      const p = DATA.products.find(x=>x.id===productId);
+      if(!p) return "";
+      return `
+      <div class="cart-row">
+        <div class="cart-label">${escapeHtml(p.brand)} ${escapeHtml(p.model)}
+          <div class="cart-sub">${escapeHtml(p.color)} · ${escapeHtml(p.specification)}</div>
+        </div>
+        <div class="stock-stepper">
+          <button data-cartdown="${productId}">−</button>
+          <span>${qty}</span>
+          <button data-cartup="${productId}">+</button>
+        </div>
+      </div>`;
+    }).join("");
+    el.querySelectorAll("[data-cartup]").forEach(b=>b.addEventListener("click", ()=>{
+      addToLendCart(b.dataset.cartup, 1);
+    }));
+    el.querySelectorAll("[data-cartdown]").forEach(b=>b.addEventListener("click", ()=>{
+      const id = b.dataset.cartdown;
+      lendCart[id] = Math.max(0, (lendCart[id]||0) - 1);
+      renderLendCart();
+    }));
+  }
+
+  function lendComboMatches(term){
+    const t = (term || "").toLowerCase();
+    let inStock = DATA.products.filter(p=>p.stock > 0);
+    if(t){
+      inStock = inStock.filter(p=>
+        (p.brand+" "+p.model+" "+p.color+" "+p.specification).toLowerCase().includes(t)
+      );
+    }
+    return inStock;
+  }
+
+  function openLendCombobox(){ document.getElementById("lendProductCombobox").classList.add("open"); }
+  function closeLendCombobox(){ document.getElementById("lendProductCombobox").classList.remove("open"); lendComboHighlight = -1; }
+
+  function renderLendComboPanel(term){
+    const panel = document.getElementById("lendProductPanel");
+    const matches = lendComboMatches(term);
+    if(matches.length === 0){
+      panel.innerHTML = `<div class="combobox-empty">${DATA.products.length === 0 ? "No products yet" : "No matches"}</div>`;
+      return;
+    }
+    panel.innerHTML = matches.map((p,i)=>`
+      <div class="combobox-item${i===lendComboHighlight?' highlighted':''}" data-id="${p.id}">
+        <span>${escapeHtml(p.brand)} ${escapeHtml(p.model)} — ${escapeHtml(p.color)} (${escapeHtml(p.specification)})</span>
+        <span class="stock-note">${p.stock} in stock</span>
+      </div>
+    `).join("");
+    panel.querySelectorAll(".combobox-item").forEach(el=>{
+      el.addEventListener("mousedown", (e)=>{
+        e.preventDefault();
+        addToLendCart(el.dataset.id, 1);
+        document.getElementById("lendProductInput").value = "";
+        renderLendComboPanel("");
+      });
+    });
+  }
+
+  const lendProductInput = document.getElementById("lendProductInput");
+  lendProductInput.addEventListener("focus", ()=>{ openLendCombobox(); renderLendComboPanel(""); });
+  lendProductInput.addEventListener("input", ()=>{ openLendCombobox(); renderLendComboPanel(lendProductInput.value); });
+  document.addEventListener("click", (e)=>{
+    if(!document.getElementById("lendProductCombobox").contains(e.target)) closeLendCombobox();
+  });
+
+  document.getElementById("btnScanLend").addEventListener("click", ()=>{
+    openScanner("Scan Cover to Lend", (product)=>{
+      addToLendCart(product.id, 1);
+      document.getElementById("scannerLastScan").textContent = `Added: ${product.brand} ${product.model} (${product.color})`;
+    });
+  });
+
+  document.getElementById("btnConfirmLend").addEventListener("click", ()=>{
+    const sellerId = document.getElementById("lendSeller").value;
+    if(!sellerId){ toast("Pick a shopkeeper first"); return; }
+    const entries = Object.entries(lendCart).filter(([,qty])=>qty > 0);
+    if(entries.length === 0){ toast("Add at least one item to lend out"); return; }
+
+    const seller = sellerById(sellerId);
+    const items = [];
+    for(const [productId, qty] of entries){
+      const p = DATA.products.find(x=>x.id===productId);
+      if(!p || p.stock < qty){ toast(`Not enough stock for ${p ? p.brand+" "+p.model : "an item"}`); return; }
+      items.push({productId, brand:p.brand, model:p.model, color:p.color, specification:p.specification, qtyLent: qty, qtyReturned: 0});
+    }
+    items.forEach(it=>{
+      const p = DATA.products.find(x=>x.id===it.productId);
+      p.stock -= it.qtyLent;
+    });
+
+    DATA.lendings.push({
+      id: uid("lend"),
+      sellerId, sellerName: seller.name,
+      lentAt: new Date().toISOString(),
+      status: "out",
+      items,
+      cashReceived: 0,
+      closedAt: null
+    });
+    saveData();
+
+    lendCart = {};
+    renderLendCart();
+    document.getElementById("lendSeller").value = "";
+    renderInventory(); renderDashboard(); renderLending();
+    toast(`Lent ${items.reduce((a,i)=>a+i.qtyLent,0)} item(s) to ${seller.name}`);
+  });
+
+  /* ================= Reconcile a lending batch ================= */
+  let reconcileBatchId = null;
+  let reconcileReturns = {};
+  let pendingCashClose = null; // { batchId, returns }
+
+  function lendingById(id){ return DATA.lendings.find(l=>l.id===id); }
+
+  function openReconcileModal(batchId){
+    const batch = lendingById(batchId);
+    if(!batch) return;
+    reconcileBatchId = batchId;
+    reconcileReturns = {};
+    batch.items.forEach(it=>{ reconcileReturns[it.productId] = 0; });
+    document.getElementById("reconcileModalTitle").textContent = `Reconcile — ${batch.sellerName}`;
+    renderReconcileItems();
+    document.getElementById("reconcileModal").classList.add("active");
+  }
+
+  function renderReconcileItems(){
+    const batch = lendingById(reconcileBatchId);
+    if(!batch) return;
+    const el = document.getElementById("reconcileItems");
+    el.innerHTML = batch.items.map(it=>{
+      const returned = reconcileReturns[it.productId] || 0;
+      const sold = it.qtyLent - returned;
+      return `
+      <div class="reconcile-item">
+        <div class="ri-label">${escapeHtml(it.brand)} ${escapeHtml(it.model)}
+          <div class="cart-sub">${escapeHtml(it.color)} · ${escapeHtml(it.specification)}</div>
+          <div class="ri-counts">Lent: ${it.qtyLent} &nbsp;·&nbsp; Returned: ${returned} &nbsp;·&nbsp; <span class="ri-sold">${sold > 0 ? "Sold: "+sold : "All returned"}</span></div>
+        </div>
+        <div class="stock-stepper">
+          <button data-recdown="${it.productId}">−</button>
+          <span>${returned}</span>
+          <button data-recup="${it.productId}">+</button>
+        </div>
+      </div>`;
+    }).join("");
+    el.querySelectorAll("[data-recup]").forEach(b=>b.addEventListener("click", ()=>{
+      const batch = lendingById(reconcileBatchId);
+      const it = batch.items.find(x=>x.productId===b.dataset.recup);
+      if(reconcileReturns[it.productId] < it.qtyLent){
+        reconcileReturns[it.productId]++;
+        renderReconcileItems();
+      }
+    }));
+    el.querySelectorAll("[data-recdown]").forEach(b=>b.addEventListener("click", ()=>{
+      reconcileReturns[b.dataset.recdown] = Math.max(0, (reconcileReturns[b.dataset.recdown]||0) - 1);
+      renderReconcileItems();
+    }));
+  }
+
+  document.getElementById("btnScanReturn").addEventListener("click", ()=>{
+    const batch = lendingById(reconcileBatchId);
+    if(!batch) return;
+    openScanner("Scan Returned Cover", (product)=>{
+      const it = batch.items.find(x=>x.productId===product.id);
+      if(!it){
+        document.getElementById("scannerLastScan").textContent = "This item wasn't part of this batch";
+        return;
+      }
+      if(reconcileReturns[it.productId] >= it.qtyLent){
+        document.getElementById("scannerLastScan").textContent = "Already fully returned";
+        return;
+      }
+      reconcileReturns[it.productId]++;
+      renderReconcileItems();
+      document.getElementById("scannerLastScan").textContent = `Returned: ${product.brand} ${product.model} (${product.color})`;
+    });
+  });
+
+  document.getElementById("closeReconcileModal").addEventListener("click", closeReconcileModal);
+  document.getElementById("cancelReconcile").addEventListener("click", closeReconcileModal);
+  function closeReconcileModal(){
+    document.getElementById("reconcileModal").classList.remove("active");
+    reconcileBatchId = null;
+    reconcileReturns = {};
+  }
+
+  document.getElementById("btnFinishReconcile").addEventListener("click", ()=>{
+    const batch = lendingById(reconcileBatchId);
+    if(!batch) return;
+    const soldItems = batch.items.filter(it => (it.qtyLent - (reconcileReturns[it.productId]||0)) > 0);
+
+    if(soldItems.length === 0){
+      // everything came back — just restock and close, no sale to record
+      batch.items.forEach(it=>{
+        const p = DATA.products.find(x=>x.id===it.productId);
+        if(p) p.stock += (reconcileReturns[it.productId]||0);
+        it.qtyReturned = reconcileReturns[it.productId]||0;
+      });
+      batch.status = "closed";
+      batch.closedAt = new Date().toISOString();
+      batch.cashReceived = 0;
+      saveData();
+      closeReconcileModal();
+      renderInventory(); renderDashboard(); renderLending();
+      toast("All items returned — stock restored");
+      return;
+    }
+
+    // some items are unaccounted for — stage the close and ask what was actually received
+    pendingCashClose = { batchId: reconcileBatchId, returns: {...reconcileReturns} };
+    const summary = soldItems.map(it=>{
+      const sold = it.qtyLent - (reconcileReturns[it.productId]||0);
+      return `${sold}× ${it.brand} ${it.model} (${it.color})`;
+    }).join(", ");
+    document.getElementById("cashModalSummary").textContent = `Not returned: ${summary}`;
+    document.getElementById("cashReceivedInput").value = "";
+    closeReconcileModal();
+    document.getElementById("cashModal").classList.add("active");
+    document.getElementById("cashReceivedInput").focus();
+  });
+
+  document.getElementById("closeCashModal").addEventListener("click", closeCashModal);
+  document.getElementById("cancelCash").addEventListener("click", closeCashModal);
+  function closeCashModal(){
+    document.getElementById("cashModal").classList.remove("active");
+    pendingCashClose = null;
+  }
+
+  document.getElementById("confirmCash").addEventListener("click", ()=>{
+    if(!pendingCashClose) return;
+    const batch = lendingById(pendingCashClose.batchId);
+    if(!batch) return;
+    const cashReceived = parseFloat(document.getElementById("cashReceivedInput").value);
+    if(isNaN(cashReceived) || cashReceived < 0){ toast("Enter a valid amount (0 or more)"); return; }
+
+    const returns = pendingCashClose.returns;
+    const soldItems = batch.items
+      .map(it => ({ it, sold: it.qtyLent - (returns[it.productId]||0) }))
+      .filter(x => x.sold > 0);
+
+    const totalListedValue = soldItems.reduce((sum,x)=>{
+      const p = DATA.products.find(pp=>pp.id===x.it.productId);
+      return sum + ((p ? p.sellPrice : 0) * x.sold);
+    }, 0);
+
+    let allocatedSoFar = 0;
+    soldItems.forEach((x, idx)=>{
+      const p = DATA.products.find(pp=>pp.id===x.it.productId);
+      let revenue;
+      if(idx === soldItems.length - 1){
+        revenue = Math.round((cashReceived - allocatedSoFar) * 100) / 100; // last item absorbs rounding remainder
+      }else if(totalListedValue > 0){
+        const weight = (p ? p.sellPrice : 0) * x.sold / totalListedValue;
+        revenue = Math.round(cashReceived * weight * 100) / 100;
+      }else{
+        revenue = Math.round((cashReceived / soldItems.length) * 100) / 100;
+      }
+      allocatedSoFar += revenue;
+
+      const cost = (p ? p.costPrice : 0) * x.sold;
+      DATA.sales.push({
+        id: uid("sale"),
+        productId: x.it.productId,
+        brand: x.it.brand, model: x.it.model, color: x.it.color, specification: x.it.specification,
+        qty: x.sold,
+        unitPrice: Math.round((revenue / x.sold) * 100) / 100,
+        total: revenue,
+        cost,
+        profit: revenue - cost,
+        date: todayStr(),
+        customer: batch.sellerName + " (consignment)",
+        createdAt: new Date().toISOString(),
+        lendingId: batch.id
+      });
+    });
+
+    // restore stock for whatever actually came back
+    batch.items.forEach(it=>{
+      const p = DATA.products.find(x=>x.id===it.productId);
+      const returned = returns[it.productId] || 0;
+      if(p) p.stock += returned;
+      it.qtyReturned = returned;
+    });
+
+    batch.status = "closed";
+    batch.closedAt = new Date().toISOString();
+    batch.cashReceived = cashReceived;
+    saveData();
+
+    closeCashModal();
+    renderInventory(); renderDashboard(); renderSales(); renderLending();
+    toast(`Batch closed — Rs ${cashReceived} recorded across ${soldItems.length} item(s)`);
+  });
+
+  /* ================= Lending view render ================= */
+  function renderLending(){
+    populateSellerSelect();
+    renderLendCart();
+    document.getElementById("scannerAvailabilityNote").textContent = cameraAvailable()
+      ? "Uses your camera — no external app needed."
+      : "Camera scanning isn't available in this browser — use search to add items instead.";
+
+    const activeBody = document.getElementById("activeLendingsBody");
+    const active = DATA.lendings.filter(l=>l.status==="out").sort((a,b)=>b.lentAt.localeCompare(a.lentAt));
+    activeBody.innerHTML = active.length ? active.map(l=>{
+      const totalQty = l.items.reduce((a,i)=>a+i.qtyLent,0);
+      return `
+      <tr>
+        <td>${escapeHtml(l.sellerName)}</td>
+        <td class="num">${new Date(l.lentAt).toLocaleDateString("en-PK",{dateStyle:'medium'})}</td>
+        <td class="num">${l.items.length} item(s), ${totalQty} unit(s)</td>
+        <td><button class="btn btn-accent btn-sm" data-reconcile="${l.id}">Reconcile</button></td>
+      </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="4">Nothing out with shopkeepers right now</td></tr>`;
+    activeBody.querySelectorAll("[data-reconcile]").forEach(b=>b.addEventListener("click", ()=>{
+      openReconcileModal(b.dataset.reconcile);
+    }));
+
+    const historyBody = document.getElementById("lendingHistoryBody");
+    const history = DATA.lendings.filter(l=>l.status==="closed").sort((a,b)=>(b.closedAt||"").localeCompare(a.closedAt||"")).slice(0,25);
+    historyBody.innerHTML = history.length ? history.map(l=>{
+      const sold = l.items.reduce((a,i)=>a+(i.qtyLent-i.qtyReturned),0);
+      const returned = l.items.reduce((a,i)=>a+i.qtyReturned,0);
+      return `
+      <tr>
+        <td>${escapeHtml(l.sellerName)}</td>
+        <td class="num">${new Date(l.lentAt).toLocaleDateString("en-PK",{dateStyle:'medium'})}</td>
+        <td class="num">${l.closedAt ? new Date(l.closedAt).toLocaleDateString("en-PK",{dateStyle:'medium'}) : "—"}</td>
+        <td class="num">${sold}</td>
+        <td class="num">${returned}</td>
+        <td class="num">${fmtMoney(l.cashReceived)}</td>
+      </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="6">No closed lending batches yet</td></tr>`;
+  }
 
   /* ---------------- New Sale view: searchable product combobox ---------------- */
   let selectedSaleProductId = "";
@@ -1858,7 +2610,10 @@
     document.getElementById("countSales").textContent = DATA.sales.length;
     document.getElementById("countManufacturers").textContent = DATA.manufacturers.length;
     document.getElementById("countNotifications").textContent = DATA.notifications.length;
+    document.getElementById("countSellers").textContent = DATA.sellers.length;
+    document.getElementById("countLendings").textContent = DATA.lendings.length;
     document.getElementById("lastExport").textContent = DATA.meta.lastExport ? new Date(DATA.meta.lastExport).toLocaleString("en-PK") : "Never";
+    renderInstallPanel();
   }
 
   document.getElementById("btnExport").addEventListener("click", ()=>{
@@ -1866,12 +2621,14 @@
     saveData();
     const exportObj = {
       app: "mobile-ledger",
-      version: 2,
+      version: 3,
       exportedAt: DATA.meta.lastExport,
       products: DATA.products,
       sales: DATA.sales,
       manufacturers: DATA.manufacturers,
-      notifications: DATA.notifications
+      notifications: DATA.notifications,
+      sellers: DATA.sellers,
+      lendings: DATA.lendings
     };
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -1903,6 +2660,8 @@
         }
         parsed.manufacturers = parsed.manufacturers || [];
         parsed.notifications = parsed.notifications || [];
+        parsed.sellers = parsed.sellers || [];
+        parsed.lendings = parsed.lendings || [];
         pendingImport = parsed;
         importModal.classList.add("active");
       }catch(err){
@@ -1923,7 +2682,9 @@
     const existingSaleIds = new Set(DATA.sales.map(s=>s.id));
     const existingMfrIds = new Set(DATA.manufacturers.map(m=>m.id));
     const existingNotifIds = new Set(DATA.notifications.map(n=>n.id));
-    let addedProducts = 0, addedSales = 0, skippedDupProducts = 0, addedMfrs = 0, addedNotifs = 0;
+    const existingSellerIds = new Set(DATA.sellers.map(s=>s.id));
+    const existingLendingIds = new Set(DATA.lendings.map(l=>l.id));
+    let addedProducts = 0, addedSales = 0, skippedDupProducts = 0, addedMfrs = 0, addedSellers = 0, addedLendings = 0;
 
     // dedupe products also by brand+model+color+spec combo to avoid visual duplicates
     const comboKey = p => [p.brand,p.model,p.color,p.specification].map(x=>(x||"").toLowerCase().trim()).join("|");
@@ -1933,6 +2694,10 @@
     const mfrComboKey = m => [m.name,m.email].map(x=>(x||"").toLowerCase().trim()).join("|");
     const existingMfrCombos = new Set(DATA.manufacturers.map(mfrComboKey));
 
+    // dedupe shopkeepers by name+phone combo
+    const sellerComboKey = s => [s.name,s.phone].map(x=>(x||"").toLowerCase().trim()).join("|");
+    const existingSellerCombos = new Set(DATA.sellers.map(sellerComboKey));
+
     pendingImport.manufacturers.forEach(m=>{
       if(existingMfrIds.has(m.id)) return;
       if(existingMfrCombos.has(mfrComboKey(m))) return;
@@ -1940,6 +2705,15 @@
       existingMfrIds.add(m.id);
       existingMfrCombos.add(mfrComboKey(m));
       addedMfrs++;
+    });
+
+    pendingImport.sellers.forEach(s=>{
+      if(existingSellerIds.has(s.id)) return;
+      if(existingSellerCombos.has(sellerComboKey(s))) return;
+      DATA.sellers.push(s);
+      existingSellerIds.add(s.id);
+      existingSellerCombos.add(sellerComboKey(s));
+      addedSellers++;
     });
 
     pendingImport.products.forEach(p=>{
@@ -1962,54 +2736,122 @@
       if(existingNotifIds.has(n.id)) return;
       DATA.notifications.push(n);
       existingNotifIds.add(n.id);
-      addedNotifs++;
+    });
+
+    pendingImport.lendings.forEach(l=>{
+      if(existingLendingIds.has(l.id)) return;
+      DATA.lendings.push(l);
+      existingLendingIds.add(l.id);
+      addedLendings++;
     });
 
     saveData();
     importModal.classList.remove("active");
     pendingImport = null;
     document.getElementById("importFile").value = "";
-    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
-    toast(`Merged: +${addedProducts} products, +${addedSales} sales, +${addedMfrs} manufacturers (${skippedDupProducts} products already existed)`);
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers(); renderLending();
+    toast(`Merged: +${addedProducts} products, +${addedSales} sales, +${addedMfrs} manufacturers, +${addedSellers} shopkeepers, +${addedLendings} lending records (${skippedDupProducts} products already existed)`);
   });
 
   document.getElementById("doReplace").addEventListener("click", ()=>{
     if(!pendingImport) return;
-    if(!confirm("This replaces every product, sale, and manufacturer currently on this device with the imported file. Continue?")) return;
+    if(!confirm("This replaces every product, sale, manufacturer, shopkeeper, and lending record currently on this device with the imported file. Continue?")) return;
     DATA.products = pendingImport.products;
     DATA.sales = pendingImport.sales;
     DATA.manufacturers = pendingImport.manufacturers;
     DATA.notifications = pendingImport.notifications;
+    DATA.sellers = pendingImport.sellers;
+    DATA.lendings = pendingImport.lendings;
     saveData();
     importModal.classList.remove("active");
     pendingImport = null;
     document.getElementById("importFile").value = "";
-    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers(); renderLending();
     toast("Ledger replaced with imported file");
   });
 
   document.getElementById("btnReset").addEventListener("click", ()=>{
-    if(!confirm("This erases ALL products, sales, and manufacturers on this device. This cannot be undone. Continue?")) return;
+    if(!confirm("This erases ALL products, sales, manufacturers, shopkeepers, and lending records on this device. This cannot be undone. Continue?")) return;
     if(!confirm("Really sure? Consider exporting a backup first.")) return;
     DATA = blankData();
     saveData();
-    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers();
+    renderInventory(); renderSales(); renderDashboard(); renderData(); renderManufacturers(); renderLending();
     toast("All local data erased");
   });
 
   /* ---------------- PWA install + service worker ---------------- */
   let deferredPrompt;
-  window.addEventListener("beforeinstallprompt", (e)=>{
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById("installBtn").classList.add("show");
-  });
-  document.getElementById("installBtn").addEventListener("click", async ()=>{
+
+  function isStandaloneApp(){
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function detectPlatform(){
+    const ua = navigator.userAgent || "";
+    if(/iPhone|iPad|iPod/.test(ua)) return "ios";
+    if(/Android/.test(ua)) return "android";
+    return "desktop";
+  }
+
+  function renderInstallPanel(){
+    const body = document.getElementById("installPanelBody");
+    if(!body) return;
+
+    if(isStandaloneApp()){
+      body.innerHTML = `
+        <p style="font-size:13px;color:#333;margin:0;">✓ You're using the installed app — no browser bar, running like a native app on this device.</p>
+      `;
+      return;
+    }
+
+    if(deferredPrompt){
+      body.innerHTML = `
+        <p style="font-size:13px;color:#666;margin:0 0 12px;">Add Mehnat to your home screen or desktop for one-tap access, offline use, and a proper app icon.</p>
+        <button class="btn btn-primary" id="installPanelBtn">Install App</button>
+      `;
+      document.getElementById("installPanelBtn").addEventListener("click", triggerInstallPrompt);
+      return;
+    }
+
+    const platform = detectPlatform();
+    let steps = "";
+    if(platform === "ios"){
+      steps = `Tap the <b>Share</b> icon in Safari's toolbar, then choose <b>"Add to Home Screen"</b>.`;
+    }else if(platform === "android"){
+      steps = `Open Chrome's menu (⋮ top right), then choose <b>"Install app"</b> or <b>"Add to Home screen"</b>.`;
+    }else{
+      steps = `Look for an install icon (⊕ or a small monitor) at the right end of the address bar, or open the browser menu and choose <b>"Install Mehnat…"</b>.`;
+    }
+    body.innerHTML = `
+      <p style="font-size:13px;color:#666;margin:0 0 8px;">
+        The install button isn't available right now — this happens if it's already installed elsewhere on this device, or your browser doesn't offer a one-tap install prompt. You can still add it manually:
+      </p>
+      <p style="font-size:13px;color:#333;margin:0;">${steps}</p>
+      <p class="helptext" style="margin-top:10px;">Already installed? Check your home screen, app drawer, or Start Menu for "Mehnat" — reinstalling isn't necessary.</p>
+    `;
+  }
+
+  async function triggerInstallPrompt(){
     if(!deferredPrompt) return;
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById("installBtn").classList.remove("show");
+    renderInstallPanel();
+  }
+
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("installBtn").classList.add("show");
+    renderInstallPanel();
+  });
+  document.getElementById("installBtn").addEventListener("click", triggerInstallPrompt);
+  window.addEventListener("appinstalled", ()=>{
+    deferredPrompt = null;
+    document.getElementById("installBtn").classList.remove("show");
+    renderInstallPanel();
+    toast("Mehnat installed");
   });
 
   if("serviceWorker" in navigator){
@@ -2023,6 +2865,7 @@
   renderDashboard();
   renderInventory();
   renderManufacturers();
+  renderLending();
   renderSales();
   renderNewSale();
   renderData();

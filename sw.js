@@ -1,10 +1,12 @@
-const CACHE_NAME = 'ledger-cache-v3';
+const CACHE_NAME = 'ledger-cache-v5';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './vendor/jsQR.min.js',
+  './vendor/qrcode.min.js'
 ];
 
 self.addEventListener('install', (event) => {
